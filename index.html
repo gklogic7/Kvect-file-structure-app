@@ -1,0 +1,615 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>KVect File Studio</title>
+<style>
+/* ===== 2. DESIGN TOKENS ===== */
+:root{--bg:#1b1c21;--p:#25272e;--b:#383b45;--t:#e6e8ee;--m:#98a0b0;--a:#6c8cff;--r:8px}
+[data-theme=light]{--bg:#f3f4f7;--p:#fff;--b:#d6d9e1;--t:#1c1e25;--m:#666c7a;--a:#3558e0}
+/* ===== 3. LAYOUT ===== */
+*{box-sizing:border-box}
+body{margin:0;height:100vh;display:flex;flex-direction:column;background:var(--bg);color:var(--t);font:13px system-ui,Segoe UI,sans-serif}
+header{display:flex;gap:6px;align-items:center;padding:6px 10px;background:var(--p);border-bottom:1px solid var(--b);flex-wrap:wrap}
+header b{color:var(--a);margin-right:4px}
+button,input,select{font:inherit;color:var(--t);background:var(--bg);border:1px solid var(--b);border-radius:6px;padding:4px 9px}
+button{cursor:pointer;transition:.15s}button:hover{border-color:var(--a)}
+:focus-visible{outline:2px solid var(--a);outline-offset:1px}
+#main{flex:1;position:relative;min-height:0;overflow:hidden;margin:6px}
+.win{position:absolute;resize:both;min-width:170px;min-height:90px;box-shadow:0 6px 24px #0006}
+.win.min{display:none!important}.win.top{border-color:var(--a)}
+.tbar{display:flex;gap:4px;align-items:center;padding:3px 6px;background:var(--bg);border-bottom:1px solid var(--b);cursor:grab;user-select:none;touch-action:none}
+.tbar span{flex:1;font-weight:600}.tbar button{padding:0 8px;line-height:18px}
+#tb{display:flex;gap:4px;padding:3px 6px;background:var(--p);border-top:1px solid var(--b);flex-wrap:wrap;min-height:30px}
+#tb button.m{opacity:.55;font-style:italic}
+.pan{background:var(--p);border:1px solid var(--b);border-radius:var(--r);display:flex;flex-direction:column;min-height:0;overflow:hidden}
+.ph{padding:5px 8px;border-bottom:1px solid var(--b);display:flex;gap:4px;flex-wrap:wrap;align-items:center;color:var(--m)}
+.pb{flex:1;overflow:auto;padding:6px;min-height:0}
+.r{padding:3px 6px;border-radius:5px;cursor:pointer;white-space:nowrap}.r:hover{background:var(--bg)}.r.s{background:var(--a);color:#fff}.r.dr{outline:1px dashed var(--a)}
+.ch{margin-left:12px;border-left:1px solid var(--b)}
+#tabs{display:flex;overflow:auto;border-bottom:1px solid var(--b)}
+.tab{padding:5px 10px;cursor:pointer;white-space:nowrap;color:var(--m);border-right:1px solid var(--b)}.tab.s{color:var(--t);background:var(--bg)}
+#ew{flex:1;position:relative;background:var(--bg);min-height:0}
+#ta,#hl{position:absolute;inset:0;margin:0;width:100%;height:100%;border:0;border-radius:0;padding:10px;font:13px/1.5 Consolas,Menlo,monospace;tab-size:2;white-space:pre;letter-spacing:0}
+#ta{resize:none;background:transparent;color:transparent;caret-color:var(--t);z-index:1;overflow:auto}
+#hl{pointer-events:none;overflow:hidden;color:var(--t)}
+#hl .k{color:#c678dd}#hl .s{color:#98c379}#hl .c{color:#7f8796;font-style:italic}#hl .n{color:#d19a66}#hl .f{color:#61afef}#hl .tg{color:#e06c75}#hl .at{color:#d19a66}
+[data-theme=light] #hl .k{color:#8a2be2}[data-theme=light] #hl .s{color:#22863a}[data-theme=light] #hl .f{color:#005cc5}[data-theme=light] #hl .n,[data-theme=light] #hl .at{color:#b45f06}[data-theme=light] #hl .tg{color:#c0392b}
+
+pre{margin:0;font:12px/1.4 Consolas,monospace;white-space:pre-wrap}
+.em{color:var(--m);padding:20px;text-align:center}
+.ok{color:#4cc38a}.er{color:#ff6b6b}.wn{color:#e5b34a}
+dialog{background:var(--p);color:var(--t);border:1px solid var(--b);border-radius:12px;max-width:min(720px,94vw);width:100%;padding:14px}
+dialog::backdrop{background:#0008}
+.g{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:6px}
+.md h1,.md h2,.md h3{margin:.6em 0 .3em}.md code,.md pre{background:var(--bg);padding:2px 4px;border-radius:4px}.md table{border-collapse:collapse}.md td,.md th{border:1px solid var(--b);padding:2px 6px}
+
+
+#pt{display:flex;gap:3px;padding:3px 8px 0;overflow-x:auto;align-items:flex-end}
+.pj{padding:3px 10px;border:1px solid var(--b);border-bottom:0;border-radius:6px 6px 0 0;background:var(--p);cursor:pointer;white-space:nowrap}.pj.s{background:var(--bg);color:var(--a);font-weight:600}.pj b{margin-left:6px;opacity:.6}
+.pjc{flex:0 0 240px;border:1px solid var(--b);border-radius:6px}.pjc.s{border-color:var(--a)}.pjh{padding:4px 6px;background:var(--bg);cursor:pointer}.pjc pre{padding:6px;max-height:60vh;overflow:auto}
+#jt{flex:1;width:100%;resize:none;border:0;border-radius:0;font:12px/1.4 Consolas,Menlo,monospace;padding:8px;background:var(--ed,var(--bg));color:var(--t);white-space:pre;tab-size:2;min-height:140px}
+#w-js{min-width:300px;min-height:240px}
+#jst{padding:3px 8px;font-size:12px;border-top:1px solid var(--b)}
+/* ===== SKINS: colours, fonts and title-bar paint only (no layout/shape changes) ===== */
+.tbar{background:var(--tb,var(--bg));color:var(--tbc,var(--t))}
+.tbar button{background:var(--tbb,var(--bt,var(--bg)));color:var(--tbbc,var(--tbc,var(--t)))}
+.tbar button:last-child{background:var(--tbx,var(--tbb,var(--bt,var(--bg))))}
+header,#tb{background:var(--hd,var(--p));color:var(--hdc,var(--t))}
+button{background:var(--bt,var(--bg))}
+input,select{background:var(--ib,var(--bg))}
+#ew{background:var(--ed,var(--bg))}
+[data-skin=xp]{--bg:#ece9d8;--p:#f6f5ee;--b:#7f9db9;--t:#000;--m:#444;--a:#316ac5;--tb:linear-gradient(#0a5bd8,#3d95ff 8%,#0a5bd8 40%,#0a5bd8 88%,#0a47b8);--tbc:#fff;--tbbc:#fff;--tbb:linear-gradient(#3b8cff,#1a5fd6);--tbx:linear-gradient(#e8836a,#c8391a);--hd:linear-gradient(#245edb,#3f8cf3 12%,#245edb 60%,#1941a5);--hdc:#fff;--bt:linear-gradient(#fff,#ece9d8 85%,#d6d0c0);--ed:#fff;--ib:#fff}
+[data-skin=xp] body{font-family:Tahoma,Verdana,sans-serif}[data-skin=xp] header b{color:#fff}[data-skin=xp] button{border-color:#003c74}
+[data-skin=w95]{--bg:#c0c0c0;--p:#c0c0c0;--b:#808080;--t:#000;--m:#404040;--a:#000080;--tb:linear-gradient(90deg,#000080,#1084d0);--tbc:#fff;--tbbc:#000;--tbb:#c0c0c0;--hd:#c0c0c0;--hdc:#000;--bt:#c0c0c0;--ed:#fff;--ib:#fff}
+[data-skin=w95] body{font-family:"MS Sans Serif",Tahoma,Arial,sans-serif}[data-skin=w95] button,[data-skin=w95] .pan{border-color:#fff #404040 #404040 #fff}[data-skin=w95] header b{color:#000080}
+[data-skin=os9]{--bg:#dcdcdc;--p:#eee;--b:#8c8c8c;--t:#000;--m:#555;--a:#6666cc;--tb:repeating-linear-gradient(#fff 0 1px,#bdbdbd 1px 2px);--tbc:#000;--tbbc:#000;--tbb:#ddd;--hd:linear-gradient(#f6f6f6,#cfcfcf);--hdc:#000;--bt:linear-gradient(#fafafa,#cdcdcd);--ed:#fff;--ib:#fff}
+[data-skin=os9] body{font-family:Charcoal,Geneva,"Lucida Grande",sans-serif}
+[data-skin=aero]{--bg:#dfe9f5;--p:#f3f7fc;--b:#8aa9cf;--t:#10243e;--m:#4c5d73;--a:#2b78d4;--tb:linear-gradient(#cfe0f5,#a9c6ec 50%,#97b9e6 51%,#bcd5f3);--tbc:#10243e;--tbbc:#10243e;--tbb:linear-gradient(#e9f1fb,#c5d8f0);--tbx:linear-gradient(#e9a08f,#c2432a);--hd:linear-gradient(#dbe8f7,#b8d0ee);--hdc:#10243e;--bt:linear-gradient(#f7fbff,#d5e4f6);--ed:#fff;--ib:#fff}
+[data-skin=aero] body{font-family:"Segoe UI",Tahoma,sans-serif}
+[data-skin=dos]{--bg:#000;--p:#021002;--b:#1c8c1c;--t:#33ff33;--m:#1fa81f;--a:#33ff33;--tb:#1c8c1c;--tbc:#000;--tbbc:#000;--tbb:#33ff33;--hd:#021002;--hdc:#33ff33;--bt:#000;--ed:#000;--ib:#000}
+[data-skin=dos] body{font-family:Consolas,"Courier New",monospace}[data-skin=dos] .r.s{color:#000}
+:is([data-skin=xp],[data-skin=w95],[data-skin=os9],[data-skin=aero]) #hl .k{color:#8a2be2}:is([data-skin=xp],[data-skin=w95],[data-skin=os9],[data-skin=aero]) #hl .s{color:#22863a}:is([data-skin=xp],[data-skin=w95],[data-skin=os9],[data-skin=aero]) #hl .f{color:#005cc5}:is([data-skin=xp],[data-skin=w95],[data-skin=os9],[data-skin=aero]) #hl :is(.n,.at){color:#b45f06}:is([data-skin=xp],[data-skin=w95],[data-skin=os9],[data-skin=aero]) #hl .tg{color:#c0392b}
+</style></head><body>
+<!-- ===== 1. APP SHELL ===== -->
+<header>
+ <b>◆ KVect</b><input id="pn" aria-label="Project name" style="width:150px">
+ <button data-c="newproj">New</button><button data-c="save">Save</button><button data-c="open">Open</button>
+ <button data-c="import">Import</button><button data-c="zip">Export ZIP</button><button data-c="html">Export HTML</button>
+ <button data-c="file">Export file</button><button data-c="jview" title="Show the Structure JSON window">JSON view</button><button data-c="jimp">Import JSON</button><button data-c="jexp">Export JSON</button><button data-c="langs">Languages</button><button data-c="assets">Assets</button>
+ <button data-c="docs">Docs</button><button data-c="pal">⌘ Ctrl+K</button><button data-c="rec" id="recb">● Rec</button><button data-c="ses" id="sesb">● Session</button><button data-c="seslog">Timeline</button><button data-c="lay">Layouts</button><button data-c="wm">Windows</button><button data-c="skin">Skins</button><button data-c="theme">Theme</button><button data-c="help">?</button>
+</header>
+<div id="pt" aria-label="Open projects"></div>
+<div id="main">
+ <section class="pan win" id="w-ex" data-title="Explorer" aria-label="Explorer">
+  <div class="ph"><button data-c="nf" title="New file">＋📄</button><button data-c="nd" title="New folder">＋📁</button><button data-c="ren">Rename</button><button data-c="dup">Copy</button><button data-c="del">Delete</button>
+  <input id="q" placeholder="Search names/contents" style="width:100%"></div>
+  <div class="pb" id="tree"></div>
+ </section>
+ <section class="pan win" id="w-ed" data-title="Editor"><div id="tabs"></div>
+  <div class="ph" id="eb"></div>
+  <div id="ew"><pre id="hl" aria-hidden="true"></pre><textarea id="ta" spellcheck="false" aria-label="Editor"></textarea></div><div id="info" class="em" hidden></div>
+ </section>
+ <section class="pan win" id="w-pv" data-title="Preview"><div class="pb" id="pv"></div></section>
+ <section class="pan win" id="w-lg" data-title="Log / export status"><div class="pb" id="log"></div></section>
+ <section class="pan win" id="w-st" data-title="Structure"><div class="pb"><pre id="st"></pre></div></section>
+ <section class="pan win" id="w-ac" data-title="Action presets"><div class="ph"><button data-c="rec">● Record / ■ Stop</button><button data-c="pimp">Import</button><button data-c="pexp">Export all</button><button data-c="pgen">+50 test presets</button><button data-c="pstress">Stress test</button><input id="pq2" placeholder="Filter presets" style="flex:1;min-width:90px"></div><div class="pb" id="ac"></div></section>
+ <section class="pan win" id="w-pj" data-title="Projects overview"><div class="ph"><button data-c="padd">＋ Project</button><button data-c="psaveall">Save all</button><span>Click a header to switch. "Copy selection here" sends the Explorer selection.</span></div><div class="pb" id="pjv" style="display:flex;gap:8px;align-items:flex-start"></div></section>
+ <section class="pan win" id="w-js" data-title="Structure JSON"><div class="ph"><button data-c="jload" title="Regenerate the JSON from the project">↻ Project</button><select id="jf" aria-label="JSON format"><option value="tree">Tree</option><option value="short">Shorthand</option><option value="paths">Path list</option></select><button data-c="japply" title="Create this structure inside the selected Explorer folder">Apply</button><button data-c="jnew" title="Open this JSON as a new project tab">New proj.</button><button data-c="jimp" title="Import a .json file">Import</button><button data-c="jexp" title="Export as .json">Export</button><button data-c="jfmt">Pretty</button></div><textarea id="jt" spellcheck="false" aria-label="Structure JSON" placeholder='Paste or edit JSON here, e.g. {"src":{"main.js":"console.log(1)"},"README.md":"# Hi"}'></textarea><div id="jst" class="ok"></div></section>
+</div>
+<div id="tb" role="toolbar" aria-label="Taskbar: click to restore or focus a window"></div>
+<dialog id="dg"></dialog><input type="file" id="fi" multiple hidden>
+
+<script>
+"use strict";
+/* ===== 5. HELPERS ===== */
+const $=s=>document.querySelector(s);
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const clean=p=>p.replace(/\\/g,'/').split('/').filter(x=>x&&x!='.'&&x!='..').join('/');
+const ext=p=>(p.match(/\.([^./]+)$/)||[,''])[1].toLowerCase();
+const KM={png:'img',jpg:'img',jpeg:'img',gif:'img',webp:'img',bmp:'img',ico:'img',svg:'svg',mp3:'aud',wav:'aud',ogg:'aud',m4a:'aud',flac:'aud',ttf:'fnt',otf:'fnt',woff:'fnt',woff2:'fnt',md:'md',json:'json',csv:'csv',html:'html',htm:'html',zip:'bin',pdf:'bin'};
+const kind=p=>KM[ext(p)]||'txt';
+const sz=n=>n>1048576?(n/1048576).toFixed(1)+' MB':n>1024?(n/1024).toFixed(1)+' KB':n+' B';
+const du=b=>new Promise(r=>{const f=new FileReader();f.onload=()=>r(f.result);f.readAsDataURL(b)});
+function dl(blob,name){const u=URL.createObjectURL(blob),a=document.createElement('a');a.href=u;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(u),4000)}
+function log(m,c=''){const l=$('#log');l.insertAdjacentHTML('afterbegin',`<div class="${c}">${new Date().toLocaleTimeString()} ${esc(m)}</div>`)}
+
+/* ===== 6. FILE-SYSTEM DATA MODEL / FileSystemManager ===== */
+// files: path -> {c:string} (text) or {b:Blob} (binary). folders: explicit (possibly empty) dirs.
+const S={name:'KVectProject',files:{},folders:new Set(),sel:'',cur:'',open:[],exp:new Set(),urls:[]};
+const FS={
+ dirs(){const d=new Set(S.folders);for(const p in S.files){const a=p.split('/');a.pop();let c='';for(const x of a){c+=(c?'/':'')+x;d.add(c)}}return d},
+ isDir:p=>FS.dirs().has(p),
+ tdir(){return !S.sel?'':FS.isDir(S.sel)?S.sel:S.sel.split('/').slice(0,-1).join('/')},
+ node(root,path){let n=root,c='';for(const x of path.split('/').filter(Boolean)){c+=(c?'/':'')+x;n=n.d[x]??={d:{},f:[],p:c}}return n},
+ root(){const r={d:{},f:[],p:''};for(const d of FS.dirs())FS.node(r,d);for(const p in S.files){const a=p.split('/'),nm=a.pop();FS.node(r,a.join('/')).f.push([nm,p])}return r},
+ move(from,to){to=clean(to);if(!to||to==from)return;
+  if(FS.isDir(from)){if(to.startsWith(from+'/'))return log('Cannot move a folder into itself','er');
+   for(const p of Object.keys(S.files))if(p.startsWith(from+'/'))FS.put(to+p.slice(from.length),S.files[p],p);
+   [...S.folders].forEach(d=>{if(d==from||d.startsWith(from+'/')){S.folders.delete(d);S.folders.add(to+d.slice(from.length))}})}
+  else FS.put(to,S.files[from],from);
+  S.open=S.open.map(o=>o==from?to:o);if(S.cur==from)S.cur=to;S.sel=to},
+ put(path,f,del){if(S.files[path]&&path!=del&&!confirm('Overwrite '+path+'?'))return;if(del)delete S.files[del];S.files[path]=f},
+ text(path,c){path=clean(path);if(S.files[path]&&!confirm('Overwrite '+path+'?'))return;S.files[path]={c}},
+ load(map){S.files={};S.folders=new Set();for(const k in map){if(k.endsWith('/'))S.folders.add(clean(k));else S.files[clean(k)]={c:map[k]}}S.open=[];S.cur='';S.sel='';S.exp=new Set(['']);for(const d of FS.dirs())S.exp.add(d)},
+ async add(dir,f){const p=clean((dir?dir+'/':'')+f.name);if(S.files[p]&&!confirm('Overwrite '+p+'?'))return;
+  const buf=new Uint8Array(await f.arrayBuffer());const bin=['img','aud','fnt','bin'].includes(kind(p))||buf.subarray(0,8000).includes(0);
+  S.files[p]=bin?{b:new Blob([buf],{type:f.type})}:{c:new TextDecoder().decode(buf)};return p},
+ async bytes(f){return f.b?new Uint8Array(await f.b.arrayBuffer()):new TextEncoder().encode(f.c)}
+};
+
+/* ===== 7. TEMPLATE REGISTRY (add entries to extend) ===== */
+const n_=()=>S.name;
+const TEMPLATES={
+ 'Web (HTML/CSS/JS)':()=>({'index.html':`<!DOCTYPE html>\n<html lang="en"><head><meta charset="utf-8"><title>${n_()}</title>\n<link rel="stylesheet" href="css/style.css"></head>\n<body><h1>${n_()}</h1><button id="b">Click</button><p id="o"></p>\n<script src="js/main.js"><\/script></body></html>\n`,'css/style.css':`body{font-family:system-ui;margin:2rem}\nbutton{padding:.5rem 1rem}\n`,'js/main.js':`let n=0;\ndocument.getElementById('b').onclick=()=>{document.getElementById('o').textContent='Clicks: '+(++n)};\n`,'data/config.json':`{\n  "name": "${n_()}",\n  "version": "0.1.0"\n}\n`,'README.md':`# ${n_()}\n\nOpen index.html in a browser.\n`,'assets/images/':1,'assets/fonts/':1,'assets/audio/':1}),
+ 'Python app':()=>({'main.py':`from src.app import run\n\nif __name__ == "__main__":\n    run()\n`,'src/app.py':`def run():\n    print("Hello from ${n_()}")\n`,'src/__init__.py':'','tests/test_app.py':`from src.app import run\n\ndef test_run(capsys):\n    run()\n    assert "Hello" in capsys.readouterr().out\n`,'requirements.txt':`pytest\n`,'config.json':`{ "debug": false }\n`,'.gitignore':`__pycache__/\n.venv/\n`,'README.md':`# ${n_()}\n\nRun: python main.py\n`}),
+ 'Node.js':()=>({'package.json':`{\n  "name": "${n_().toLowerCase()}",\n  "version": "0.1.0",\n  "main": "src/index.js",\n  "scripts": { "start": "node src/index.js" }\n}\n`,'src/index.js':`console.log('Hello from ${n_()}');\n`,'.gitignore':`node_modules/\n`,'README.md':`# ${n_()}\n\nnpm start\n`}),
+ 'Rust':()=>({'Cargo.toml':`[package]\nname = "${n_().toLowerCase()}"\nversion = "0.1.0"\nedition = "2021"\n`,'src/main.rs':`fn main() {\n    println!("Hello, world!");\n}\n`,'.gitignore':`target/\n`}),
+ 'Go':()=>({'go.mod':`module ${n_().toLowerCase()}\n\ngo 1.21\n`,'main.go':`package main\n\nimport "fmt"\n\nfunc main() {\n\tfmt.Println("Hello, world!")\n}\n`}),
+ 'C++':()=>({'CMakeLists.txt':`cmake_minimum_required(VERSION 3.16)\nproject(${n_()} CXX)\nadd_executable(app src/main.cpp)\n`,'src/main.cpp':`#include <iostream>\nint main(){ std::cout << "Hello\\n"; return 0; }\n`}),
+ 'Java':()=>({'src/Main.java':`public class Main {\n    public static void main(String[] a) {\n        System.out.println("Hello");\n    }\n}\n`,'README.md':`# ${n_()}\n\njavac src/Main.java && java -cp src Main\n`}),
+ 'Godot 4':()=>({'project.godot':`config_version=5\n\n[application]\nconfig/name="${n_()}"\nrun/main_scene="res://scenes/main.tscn"\n`,'scripts/player.gd':`extends CharacterBody2D\n\nconst SPEED = 200.0\n\nfunc _physics_process(_d):\n\tvelocity = Input.get_vector("ui_left","ui_right","ui_up","ui_down") * SPEED\n\tmove_and_slide()\n`,'scenes/':1,'assets/sprites/':1,'assets/audio/':1,'assets/fonts/':1,'data/':1,'docs/':1,'README.md':`# ${n_()}\n\nOpen project.godot in Godot 4. Add scenes/main.tscn in the editor.\n`}),
+ 'Documentation':()=>DOCS(),
+ 'Empty':()=>({'README.md':`# ${n_()}\n`})
+};
+const DOCS=()=>{const n=n_();return{'README.md':`# ${n}\n\n## Description\n\n## Features\n\n## Installation\nSee INSTALLATION.md\n\n## Usage\nSee USER_GUIDE.md\n\n## Structure\nSee ARCHITECTURE.md\n\n## Known limitations\n\n## License\nSee LICENSE (choose a license yourself)\n`,'INSTALLATION.md':`# Installation\n\n1. Requirements\n2. Steps\n`,'USER_GUIDE.md':`# User Guide\n`,'ARCHITECTURE.md':`# Architecture\n\n${tree2(FS.root())||'(generate after adding files)'}\n`,'CHANGELOG.md':`# Changelog\n\n## [Unreleased]\n- Initial files\n`,'CONTRIBUTING.md':`# Contributing\n\nOpen an issue, then a pull request.\n`,'TODO.md':`# TODO\n\n- [ ] First task\n`,'SECURITY.md':`# Security\n\nReport vulnerabilities privately to the maintainer.\n`,'API.md':`# API\n\n## Endpoints / functions\n`,'LICENSE':`<Add your chosen license text here. No license has been selected or verified automatically.>\n`}};
+// Language library: [ext, filename, folder, purpose, code]
+const LANGS=[
+['html','index.html','','Web page entry','<!DOCTYPE html>\n<html lang="en"><head><meta charset="utf-8"><title>Page</title></head>\n<body><h1>Hello</h1></body></html>\n'],
+['css','style.css','css','Stylesheet',':root{--accent:#6c8cff}\nbody{font-family:system-ui;color:#222}\n'],
+['js','main.js','src','JavaScript entry',"const greet = n => `Hello, ${n}!`;\nconsole.log(greet('world'));\n"],
+['ts','main.ts','src','TypeScript entry (needs tsc)','function greet(n: string): string {\n  return `Hello, ${n}!`;\n}\nconsole.log(greet("world"));\n'],
+['py','main.py','','Python script','def main():\n    print("Hello, world!")\n\nif __name__ == "__main__":\n    main()\n'],
+['c','main.c','src','C program','#include <stdio.h>\nint main(void){ printf("Hello\\n"); return 0; }\n'],
+['cpp','main.cpp','src','C++ program','#include <iostream>\nint main(){ std::cout << "Hello\\n"; }\n'],
+['cs','Program.cs','','C# program','using System;\nclass Program {\n  static void Main() => Console.WriteLine("Hello");\n}\n'],
+['java','Main.java','src','Java program','public class Main {\n  public static void main(String[] args) { System.out.println("Hello"); }\n}\n'],
+['kt','Main.kt','src','Kotlin program','fun main() {\n    println("Hello")\n}\n'],
+['dart','main.dart','lib','Dart program',"void main() {\n  print('Hello');\n}\n"],
+['swift','main.swift','Sources','Swift program','print("Hello")\n'],
+['rs','main.rs','src','Rust program','fn main() {\n    println!("Hello");\n}\n'],
+['go','main.go','','Go program','package main\n\nimport "fmt"\n\nfunc main() { fmt.Println("Hello") }\n'],
+['php','index.php','','PHP page','<?php\necho "Hello";\n'],
+['rb','main.rb','','Ruby script','puts "Hello"\n'],
+['sql','schema.sql','db','SQL schema','CREATE TABLE users (\n  id INTEGER PRIMARY KEY,\n  name TEXT NOT NULL\n);\n'],
+['sh','run.sh','scripts','Bash script','#!/usr/bin/env bash\nset -euo pipefail\necho "Hello"\n'],
+['ps1','run.ps1','scripts','PowerShell script','Write-Host "Hello"\n'],
+['lua','main.lua','','Lua script','print("Hello")\n'],
+['gd','player.gd','scripts','GDScript','extends Node\n\nfunc _ready():\n\tprint("Hello")\n'],
+['glsl','shader.frag','shaders','GLSL fragment shader','#version 330 core\nout vec4 FragColor;\nvoid main(){ FragColor = vec4(1.0,0.5,0.2,1.0); }\n'],
+['hlsl','shader.hlsl','shaders','HLSL pixel shader','float4 main(float4 pos : SV_POSITION) : SV_TARGET {\n    return float4(1,0.5,0.2,1);\n}\n'],
+['json','config.json','data','JSON config','{\n  "name": "app",\n  "debug": false\n}\n'],
+['yaml','config.yaml','','YAML config','name: app\ndebug: false\nitems:\n  - one\n  - two\n'],
+['toml','config.toml','','TOML config','name = "app"\n\n[server]\nport = 8080\n'],
+['xml','data.xml','data','XML data','<?xml version="1.0" encoding="UTF-8"?>\n<root><item id="1">One</item></root>\n'],
+['ini','settings.ini','','INI settings','[general]\nname=app\ndebug=false\n'],
+['env','.env.example','','Environment example','API_URL=http://localhost:8080\nSECRET=change-me\n'],
+['csv','data.csv','data','CSV table','id,name\n1,Alice\n2,Bob\n'],
+['md','README.md','','Markdown doc','# Title\n\nSome **text**.\n\n- item\n'],
+['gitignore','.gitignore','','Git ignore','node_modules/\n*.log\n.env\n'],
+['dockerfile','Dockerfile','','Container image','FROM node:20-alpine\nWORKDIR /app\nCOPY . .\nCMD ["node","src/index.js"]\n']
+];
+
+/* ===== 8. STORAGE (IndexedDB) ===== */
+const Store={
+ db:()=>new Promise((res,rej)=>{const r=indexedDB.open('kvect-studio',1);r.onupgradeneeded=()=>r.result.createObjectStore('p');r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error)}),
+ async tx(mode,fn){const d=await Store.db();return new Promise((res,rej)=>{const t=d.transaction('p',mode),q=fn(t.objectStore('p'));t.oncomplete=()=>res(q&&q.result);t.onerror=()=>rej(t.error);t.onabort=()=>rej(t.error)})},
+ async save(){try{await Store.tx('readwrite',s=>s.put({name:S.name,files:S.files,folders:[...S.folders]},S.name));try{localStorage.setItem('kvect.last',S.name)}catch{}log('Saved "'+S.name+'" to browser storage','ok')}catch(e){log('Save failed ('+(e&&e.name==='QuotaExceededError'?'storage quota exceeded':e)+'). Use Export ZIP as backup.','er')}},
+ keys:()=>Store.tx('readonly',s=>s.getAllKeys()),
+ async load(n){const r=await Store.tx('readonly',s=>s.get(n));if(!r)return false;S.name=r.name;S.files=r.files;S.folders=new Set(r.folders);S.open=[];S.cur='';S.sel='';S.exp=new Set(['']);for(const d of FS.dirs())S.exp.add(d);return true},
+ del:n=>Store.tx('readwrite',s=>s.delete(n))
+};
+
+/* ===== 12. ZIP / EXPORT (store-only ZIP, local CRC32) ===== */
+const crcT=(()=>{const t=[];for(let n=0;n<256;n++){let c=n;for(let k=0;k<8;k++)c=c&1?0xEDB88320^(c>>>1):c>>>1;t[n]=c>>>0}return t})();
+const crc=u=>{let c=-1;for(let i=0;i<u.length;i++)c=crcT[(c^u[i])&255]^(c>>>8);return(c^-1)>>>0};
+function makeZip(entries){const enc=new TextEncoder(),parts=[],cen=[];let off=0,cs=0;
+ for(const e of entries){const n=enc.encode(e.name),d=e.data,c=crc(d);
+  const h=new DataView(new ArrayBuffer(30));h.setUint32(0,0x04034b50,true);h.setUint16(4,20,true);h.setUint16(6,0x800,true);h.setUint32(14,c,true);h.setUint32(18,d.length,true);h.setUint32(22,d.length,true);h.setUint16(26,n.length,true);
+  parts.push(h,n,d);
+  const g=new DataView(new ArrayBuffer(46));g.setUint32(0,0x02014b50,true);g.setUint16(4,20,true);g.setUint16(6,20,true);g.setUint16(8,0x800,true);g.setUint32(16,c,true);g.setUint32(20,d.length,true);g.setUint32(24,d.length,true);g.setUint16(28,n.length,true);g.setUint32(42,off,true);
+  cen.push(g,n);cs+=46+n.length;off+=30+n.length+d.length}
+ const e=new DataView(new ArrayBuffer(22));e.setUint32(0,0x06054b50,true);e.setUint16(8,entries.length,true);e.setUint16(10,entries.length,true);e.setUint32(12,cs,true);e.setUint32(16,off,true);
+ return new Blob([...parts,...cen,e],{type:'application/zip'})}
+const Exp={
+ async zip(){const en=[],ds=FS.dirs();for(const d of ds)en.push({name:d+'/',data:new Uint8Array(0)});
+  for(const p in S.files)en.push({name:p,data:await FS.bytes(S.files[p])});
+  const b=makeZip(en);dl(b,S.name+'.zip');log(`ZIP exported: ${Object.keys(S.files).length} files, ${ds.size} folders, ${sz(b.size)}, 0 skipped`,'ok')},
+ file(){const p=S.cur;if(!p)return log('Open a file first','wn');const f=S.files[p];dl(f.b||new Blob([f.c],{type:'text/plain'}),p.split('/').pop())},
+ async html(){const D={};for(const p in S.files){const f=S.files[p];D[p]=f.b?await du(f.b):f.c}
+  const js=`const D=${JSON.stringify(D).replace(/</g,'\\u003c')};const l=document.getElementById('l'),v=document.getElementById('v');
+for(const p in D){const li=document.createElement('li');li.textContent=p;li.style.cursor='pointer';li.onclick=()=>{const d=D[p];v.innerHTML='';
+if(d.startsWith('data:image'))v.innerHTML='<img src="'+d+'">';else if(d.startsWith('data:audio'))v.innerHTML='<audio controls src="'+d+'"></audio>';else if(d.startsWith('data:')){const a=document.createElement('a');a.href=d;a.download=p.split('/').pop();a.textContent='Download '+p;v.append(a)}else{const pr=document.createElement('pre');pr.textContent=d;v.append(pr)}};l.append(li)}`;
+  const h=`<!DOCTYPE html><html><head><meta charset="utf-8"><title>${esc(S.name)} (snapshot)</title><style>body{font:14px system-ui;display:flex;gap:20px;padding:16px}pre{white-space:pre-wrap}</style></head><body><ul id="l"></ul><div id="v"><p>Select a file. This is a read-only snapshot viewer.</p></div><script>${js}<\/script></body></html>`;
+  const b=new Blob([h],{type:'text/html'});dl(b,S.name+'-snapshot.html');log('Standalone HTML snapshot exported ('+sz(b.size)+'). It is a viewer, not a folder tree.','ok')}
+};
+
+/* ===== 9/10. EDITORS, PREVIEWS, VALIDATION ===== */
+function md(src){let h=esc(src);const bl=[];h=h.replace(/```[\w]*\n([\s\S]*?)```/g,(_,c)=>{bl.push(c);return'\u0000'+(bl.length-1)+'\u0000'});
+ h=h.replace(/^(#{1,3}) (.+)$/gm,(_,a,t)=>`<h${a.length}>${t}</h${a.length}>`).replace(/\*\*(.+?)\*\*/g,'<b>$1</b>').replace(/`([^`]+)`/g,'<code>$1</code>')
+ .replace(/\[([^\]]+)\]\(([^)\s]+)\)/g,(m,t,u)=>/^(https?:|\.|\/|#|[\w-]+\.)/.test(u)?`<a href="${u}" target="_blank" rel="noopener">${t}</a>`:m)
+ .replace(/^&gt; (.+)$/gm,'<blockquote>$1</blockquote>').replace(/^(\s*)[-*] (.+)$/gm,'<li>$2</li>')
+ .replace(/((?:^\|.+\|\n?)+)/gm,t=>'<table>'+t.trim().split('\n').filter(r=>!/^\|[\s:|-]+\|$/.test(r)).map(r=>'<tr>'+r.slice(1,-1).split('|').map(c=>'<td>'+c.trim()+'</td>').join('')+'</tr>').join('')+'</table>')
+ .replace(/\n\n/g,'<br><br>');return h.replace(/\u0000(\d+)\u0000/g,(_,i)=>'<pre>'+bl[i]+'</pre>')}
+function preview(){S.urls.forEach(URL.revokeObjectURL);S.urls=[];const pv=$('#pv'),p=S.cur,f=S.files[p];if(!f){pv.innerHTML='<div class="em">Nothing to preview</div>';return}
+ const k=kind(p),url=()=>{const u=URL.createObjectURL(f.b);S.urls.push(u);return u};
+ if(k=='img')pv.innerHTML=`<div style="background:repeating-conic-gradient(#8884 0 25%,#0000 0 50%) 0 0/16px 16px;padding:8px"><img id="im" src="${url()}" style="max-width:100%"></div><p id="imi"></p>`,$('#im').onload=e=>$('#imi').textContent=`${e.target.naturalWidth}×${e.target.naturalHeight} · ${ext(p).toUpperCase()} · ${sz(f.b.size)}`;
+ else if(k=='aud')pv.innerHTML=`<audio controls loop src="${url()}" style="width:100%"></audio><p>${sz(f.b.size)}</p>`;
+ else if(k=='fnt'){const fam='kv'+Date.now();new FontFace(fam,'url('+url()+')').load().then(ff=>{document.fonts.add(ff);pv.innerHTML=`<label>Size <input type=range min=10 max=72 value=28 oninput="this.parentNode.nextElementSibling.style.fontSize=this.value+'px'"></label><div style="font-family:'${fam}';font-size:28px"><h2>The quick brown fox</h2><p>Jumps over the lazy dog 0123456789</p><button>Button</button></div><p>${sz(f.b.size)}</p>`}).catch(e=>pv.textContent='Font failed to load: '+e)}
+ else if(f.b)pv.innerHTML=`<div class="em">Binary file · ${sz(f.b.size)}</div>`;
+ else if(k=='md')pv.innerHTML=`<div class="md">${md(f.c)}</div>`;
+ else if(k=='svg'){const u=URL.createObjectURL(new Blob([f.c],{type:'image/svg+xml'}));S.urls.push(u);pv.innerHTML=`<img src="${u}" style="max-width:100%;background:#fff">`}
+ else if(k=='json'){try{JSON.parse(f.c);pv.innerHTML='<span class=ok>✔ Valid JSON</span>'}catch(e){pv.innerHTML='<span class=er>✖ '+esc(e.message)+'</span>'}}
+ else if(k=='csv')pv.innerHTML='<table class="md">'+f.c.trim().split('\n').map(r=>'<tr>'+r.split(',').map(c=>'<td>'+esc(c)+'</td>').join('')+'</tr>').join('')+'</table>';
+ else if(k=='html')pv.innerHTML='<iframe sandbox style="width:100%;height:100%;border:0;background:#fff" srcdoc="'+esc(f.c)+'"></iframe>'; // sandbox: no scripts run
+ else pv.innerHTML='<div class="em">Plain-text file (no syntax highlighting; shown as plain text)</div>'}
+function editor(){const f=S.files[S.cur],ta=$('#ta'),inf=$('#info');
+ $('#tabs').innerHTML=S.open.map(o=>`<div class="tab ${o==S.cur?'s':''}" data-t="${esc(o)}">${esc(o.split('/').pop())} <span data-x="${esc(o)}">✕</span></div>`).join('');
+ $('#eb').innerHTML=S.cur?`<span>${esc(S.cur.split('/').join(' › '))}</span>`+(kind(S.cur)=='json'?' <button data-c="pretty">Pretty</button><button data-c="mini">Minify</button>':'')+' <button data-c="copy">Copy</button>':'';
+ if(!f){$('#ew').hidden=true;inf.hidden=false;inf.textContent='Open or create a file';return}
+ if(f.b){$('#ew').hidden=true;inf.hidden=false;inf.textContent='Binary file — see preview. Export keeps original bytes.'}
+ else{$('#ew').hidden=false;inf.hidden=true;ta.value=f.c;hlDraw()}
+ preview()}
+function openFile(p){if(!S.files[p])return;SES.add('open',p);if(!S.open.includes(p))S.open.push(p);S.cur=p;S.sel=p;render()}
+
+/* ===== 13. TREE UI ===== */
+function tree2(n,pre=''){const k=[...Object.keys(n.d).sort().map(x=>[x,n.d[x]]),...n.f.sort().map(([x])=>[x])];return k.map(([x,c],i)=>{const l=i==k.length-1;return pre+(l?'└── ':'├── ')+x+(c?'/':'')+'\n'+(c?tree2(c,pre+(l?'    ':'│   ')):'')}).join('')}
+function render(){const root=FS.root(),q=$('#q').value.trim().toLowerCase();let h='';
+ if(q){const hits=Object.keys(S.files).filter(p=>p.toLowerCase().includes(q)||(S.files[p].c||'').toLowerCase().includes(q));h=hits.map(p=>`<div class="r" data-p="${esc(p)}">📄 ${esc(p)}</div>`).join('')||'<div class="em">No matches</div>'}
+ else{const R=n=>Object.keys(n.d).sort().map(k=>{const c=n.d[k],o=S.exp.has(c.p);return`<div class="r ${S.sel==c.p?'s':''}" draggable="true" data-p="${esc(c.p)}" data-d="1">${o?'▾':'▸'} 📁 ${esc(k)}</div>`+(o?`<div class="ch">${R(c)}</div>`:'')}).join('')+n.f.sort().map(([nm,p])=>`<div class="r ${S.sel==p?'s':''}" draggable="true" data-p="${esc(p)}">📄 ${esc(nm)}</div>`).join('');
+  h=`<div class="r" data-p="" data-d="1" data-root="1">◆ ${esc(S.name)}/</div><div class="ch">${R(root)||'<div class="em">Empty project. Use New or Import.</div>'}</div>`}
+ $('#tree').innerHTML=h;$('#st').textContent=S.name+'/\n'+tree2(root);$('#pn').value=S.name;editor();REC.tick();SES.tick();acDraw();pjDraw();JSX.sync()}
+let dragP=null;
+$('#tree').addEventListener('click',e=>{const r=e.target.closest('.r');if(!r)return;const p=r.dataset.p;S.sel=p;
+ if(r.dataset.d){S.exp.has(p)?S.exp.delete(p):S.exp.add(p);render()}else openFile(p)});
+$('#tree').addEventListener('dragstart',e=>{const r=e.target.closest('.r');if(r)dragP=r.dataset.p});
+$('#tree').addEventListener('dragover',e=>{const r=e.target.closest('.r');if(r&&r.dataset.d&&dragP!==null){e.preventDefault();r.classList.add('dr')}});
+$('#tree').addEventListener('dragleave',e=>e.target.closest('.r')?.classList.remove('dr'));
+$('#tree').addEventListener('drop',e=>{e.preventDefault();const r=e.target.closest('.r');if(!r||dragP===null)return;const d=r.dataset.p;FS.move(dragP,(d?d+'/':'')+dragP.split('/').pop());dragP=null;render()});
+$('#tabs').addEventListener('click',e=>{const x=e.target.dataset.x,t=e.target.closest('.tab');
+ if(x){S.open=S.open.filter(o=>o!=x);if(S.cur==x)S.cur=S.open[S.open.length-1]||'';render()}else if(t){S.cur=t.dataset.t;render()}});
+let tm;$('#ta').addEventListener('input',e=>{S.files[S.cur].c=e.target.value;hlDraw();SES.edit(S.cur,e.target.value.length);clearTimeout(tm);tm=setTimeout(()=>{preview();$('#st').textContent=S.name+'/\n'+tree2(FS.root());Store.save()},1500)});
+$('#q').addEventListener('input',render);
+$('#pn').addEventListener('change',e=>{S.name=clean(e.target.value)||'KVectProject';render()});
+$('#fi').addEventListener('change',async e=>{const dir=FS.tdir();let n=0;for(const f of e.target.files){const p=await FS.add(dir,f);if(p)n++}e.target.value='';manifest();log(`Imported ${n} file(s) into /${dir}`,'ok');render()});
+
+/* ===== 11. ASSETS / DOCS / MANIFESTS ===== */
+function manifest(){const A=Object.keys(S.files).filter(p=>['img','fnt','aud'].includes(kind(p)));if(!A.length)return;
+ S.files['assets/data/manifest.json']={c:JSON.stringify({generated:new Date().toISOString(),assets:A.map(p=>({path:p,type:kind(p),bytes:S.files[p].b.size}))},null,2)+'\n'};
+ const F=A.filter(p=>kind(p)=='fnt');if(F.length){const fm={woff2:'woff2',woff:'woff',ttf:'truetype',otf:'opentype'};
+  S.files['assets/fonts/fonts.css']={c:'/* Expects each font file at the relative path shown (same folder as this CSS). */\n'+F.map(p=>{const n=p.split('/').pop();return`@font-face {\n  font-family: "${n.replace(/\.[^.]+$/,'')}";\n  src: url("${p.startsWith('assets/fonts/')?'./'+p.slice(13):'/'+p}") format("${fm[ext(p)]}");\n  font-display: swap;\n}\n`}).join('\n')}}}
+const SVGS={icon:'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" rx="14" fill="#6c8cff"/><path d="M20 44V20h6v10l10-10h8L33 31l12 13h-8L26 34v10z" fill="#fff"/></svg>',
+ logo:'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 60"><rect width="240" height="60" fill="none"/><circle cx="30" cy="30" r="20" fill="#6c8cff"/><text x="60" y="38" font-family="sans-serif" font-size="26" fill="#888" font-weight="700">KVect</text></svg>',
+ placeholder:'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 180"><rect width="320" height="180" fill="#ccd"/><path d="M0 0L320 180M320 0L0 180" stroke="#99a"/><text x="160" y="95" text-anchor="middle" font-family="sans-serif" fill="#556">320×180</text></svg>',
+ avatar:'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" fill="#233"/><circle cx="50" cy="38" r="18" fill="#fc9"/><path d="M15 95c0-25 20-35 35-35s35 10 35 35z" fill="#6c8cff"/></svg>'};
+function assetsDlg(){dlg(`<h3>Asset generators & managers</h3><p>Imports go to the selected folder. Fonts/audio/images are kept as original bytes; manifests are generated automatically.</p>
+<div class="g"><button data-a="imp">Import images/fonts/audio…</button>${Object.keys(SVGS).map(k=>`<button data-a="svg-${k}">SVG ${k}</button>`).join('')}<button data-a="png">Procedural PNG (Canvas)</button><button data-a="man">Regenerate manifests</button></div>`,async a=>{
+ if(a=='imp'){$('#dg').close();$('#fi').click()}
+ else if(a.startsWith('svg-')){FS.text('assets/images/'+a.slice(4)+'.svg',SVGS[a.slice(4)]);log('Created SVG '+a.slice(4),'ok');render()}
+ else if(a=='png'){const w=+prompt('Width px',512)||512,h=+prompt('Height px',512)||512;if(w*h>16e6)return log('Too large','er');
+  const c=document.createElement('canvas');c.width=w;c.height=h;const x=c.getContext('2d'),g=x.createLinearGradient(0,0,w,h);g.addColorStop(0,'#6c8cff');g.addColorStop(1,'#ff7ac6');x.fillStyle=g;x.fillRect(0,0,w,h);x.fillStyle='#fff8';x.beginPath();x.arc(w/2,h/2,Math.min(w,h)/4,0,7);x.fill();
+  c.toBlob(b=>{const p='assets/images/generated-'+Date.now()+'.png';S.files[p]={b};manifest();log('Created '+p+' ('+sz(b.size)+')','ok');render()})}
+ else if(a=='man'){manifest();log('Manifests regenerated','ok');render()}})}
+function langDlg(){const L=(q='')=>LANGS.filter(l=>(l[0]+l[1]+l[3]).toLowerCase().includes(q));
+ dlg(`<h3>Language & format templates</h3><input id="lq" placeholder="Search…" style="width:100%"><div id="ll" class="g" style="margin:8px 0"></div><div id="ld"></div>`,null,()=>{
+  const draw=q=>{$('#ll').innerHTML=L(q).map(l=>`<button data-i="${LANGS.indexOf(l)}">.${l[0]}</button>`).join('')};draw('');
+  $('#lq').oninput=e=>draw(e.target.value.toLowerCase());
+  $('#ll').onclick=e=>{const i=e.target.dataset.i;if(i==null)return;const l=LANGS[i];$('#ld').innerHTML=`<p><b>${l[1]}</b> — ${l[3]}. Suggested folder: <code>/${l[2]}</code></p><textarea id="lc" style="width:100%;height:150px;font-family:monospace">${esc(l[4])}</textarea><button id="lcp">Copy</button> <button id="lad">Add to project</button>`;
+   $('#lcp').onclick=()=>navigator.clipboard?.writeText($('#lc').value).then(()=>log('Copied','ok'));
+   $('#lad').onclick=()=>{const p=clean((l[2]?l[2]+'/':'')+l[1]);FS.text(p,$('#lc').value);openFile(p);$('#dg').close()}}})}
+function dlg(html,onA,after){const d=$('#dg');d.innerHTML=html+'<p><button onclick="this.closest(\'dialog\').close()">Close</button></p>';d.onclick=e=>{const a=e.target.dataset.a;if(a&&onA)onA(a)};d.showModal();after&&after()}
+
+/* ===== 14. COMMANDS ===== */
+const C={
+ newproj(){dlg('<h3>New project from template</h3><p>These templates only generate files; they are not compiled or tested with the real toolchain.</p><div class="g">'+Object.keys(TEMPLATES).map(k=>`<button data-a="${esc(k)}">${esc(k)}</button>`).join('')+'</div>',a=>{if(!PJ.fresh&&!confirm('Replace the current project? Unsaved changes are lost.'))return;PJ.fresh=false;S.name=clean(prompt('Project name',S.name))||S.name;FS.load(TEMPLATES[a]());$('#dg').close();log('Created '+a+' project','ok');render();if(S.files['README.md'])openFile('README.md')})},
+ save:()=>Store.save(),
+ async open(){const k=(await Store.keys()).filter(x=>!x.startsWith('__'));if(!k.length)return log('No saved projects yet','wn');dlg('<h3>Saved projects</h3>'+k.map(n=>`<div><button data-a="o:${esc(n)}">${esc(n)}</button> <button data-a="d:${esc(n)}">Delete</button></div>`).join(''),async a=>{const n=a.slice(2);if(a[0]=='o'){if(Object.keys(S.files).length||S.folders.size)PJ.add();PJ.fresh=false;await Store.load(n);$('#dg').close();render();log('Opened '+n,'ok')}else if(confirm('Permanently delete stored project "'+n+'"?')){await Store.del(n);$('#dg').close();log('Deleted '+n,'wn')}})},
+ import:()=>$('#fi').click(),zip:()=>Exp.zip(),html:()=>Exp.html(),file:()=>Exp.file(),langs:langDlg,assets:assetsDlg,
+ docs(){const d=DOCS();let n=0;for(const k in d){if(!S.files[k]||confirm('Overwrite '+k+'?')){S.files[k]={c:d[k]};n++}}log(n+' doc files generated (edit before export; license not chosen for you)','ok');render()},
+ nf(){const n=prompt('New file path (relative to selected folder)','untitled.txt');if(!n)return;const d=FS.tdir(),p=clean((d?d+'/':'')+n);FS.text(p,'');openFile(p)},
+ nd(){const n=prompt('New folder name');if(!n)return;const d=FS.tdir();const p=clean((d?d+'/':'')+n);S.folders.add(p);S.exp.add(d);S.exp.add(p);render()},
+ ren(){if(!S.sel)return;const n=prompt('New path',S.sel);if(n){FS.move(S.sel,n);render()}},
+ dup(){if(!S.sel||FS.isDir(S.sel))return log('Select a file to duplicate','wn');const p=S.sel.replace(/(\.[^./]+)?$/,'-copy$1');S.files[p]={...S.files[S.sel]};openFile(p)},
+ del(){if(!S.sel||!confirm('Delete '+S.sel+'?'))return;const s=S.sel;for(const p of Object.keys(S.files))if(p==s||p.startsWith(s+'/'))delete S.files[p];[...S.folders].forEach(d=>{if(d==s||d.startsWith(s+'/'))S.folders.delete(d)});S.open=S.open.filter(o=>S.files[o]);if(!S.files[S.cur])S.cur=S.open[0]||'';S.sel='';render()},
+ pretty(){try{S.files[S.cur].c=JSON.stringify(JSON.parse(S.files[S.cur].c),null,2)+'\n';editor()}catch(e){log('JSON error: '+e.message,'er')}},
+ mini(){try{S.files[S.cur].c=JSON.stringify(JSON.parse(S.files[S.cur].c));editor()}catch(e){log('JSON error: '+e.message,'er')}},
+ copy(){navigator.clipboard?.writeText(S.files[S.cur].c||'').then(()=>log('Copied','ok'))},
+ theme(){const r=document.documentElement;r.dataset.theme=r.dataset.theme=='dark'?'light':'dark';try{localStorage.setItem('kvect.theme',r.dataset.theme)}catch{}},
+ rec(){REC.on?REC.stop():REC.start()},lay:()=>layDlg(),padd(){PJ.add();C.newproj()},jview:()=>JSX.show(),jload:()=>JSX.fill(),japply:()=>JSX.apply(),jnew:()=>JSX.newproj(),jimp:()=>JSX.imp(),jexp:()=>JSX.exp(),jfmt:()=>JSX.fmt(),psaveall:()=>saveAll(),ses(){SES.on?SES.stop():SES.start()},seslog:()=>sesDlg(),skin(){dlg('<h3>Skins</h3><p>Skins change colours, fonts and title-bar paint only. Layout and shapes stay the same. Skins marked ◐ have their own Light and Dark versions: use the Theme button to switch.</p><div class="g">'+Object.entries(SKINS).map(([k,n])=>`<button data-a="s:${k}">${n}</button>`).join('')+'</div>',a=>{setSkin(a.slice(2));log('Skin: '+SKINS[a.slice(2)],'ok')})},pimp:()=>pimport(),pexp(){if(!PS.list.length)return log('No presets to export','wn');dl(pjson(PS.list),'kvect-presets.json');log('Exported '+PS.list.length+' preset(s)','ok')},pgen:()=>genAll(),pstress:()=>stress(),
+ wm(){dlg('<h3>Window manager</h3><p>Drag a title bar to move, drag the bottom-right corner to resize, and use – □ ✕ to minimize, maximize or close. Minimized and closed windows stay on the taskbar.</p><div class="g"><button data-a="tile">Tile layout</button><button data-a="cas">Cascade</button><button data-a="all">Show all windows</button></div>',a=>{WM.cmd(a);$('#dg').close()})},
+ help:()=>dlg(`<h3>Help & shortcuts</h3><p><b>Ctrl+S</b> save · <b>Ctrl+K</b> command palette · <b>Ctrl+E</b> export ZIP · <b>Esc</b> close dialogs. Action presets: ● Rec asks for a dummy folder name and records everything you create inside it; Stop saves a preset you can Apply to any selected folder. Windows: drag title bars, resize from the corner, – minimize, □ maximize, ✕ close (restore from the taskbar or Windows button).</p><p>Drag files onto folders to move them. Search box matches names and contents. HTML previews run sandboxed (no scripts). Projects live in this browser's IndexedDB — export a ZIP for real backups. Add languages by appending to <code>LANGS</code>, project templates to <code>TEMPLATES</code>.</p>`),
+ pal(){dlg('<input id="pq" placeholder="Type a command…" style="width:100%"><div id="pl"></div>',null,()=>{const names=Object.keys(C).filter(k=>k!='pal');const d=q=>{$('#pl').innerHTML=names.filter(n=>n.includes(q)).map(n=>`<div><button data-k="${n}" style="width:100%;text-align:left">${n}</button></div>`).join('')};d('');$('#pq').focus();$('#pq').oninput=e=>d(e.target.value);$('#pl').onclick=e=>{const k=e.target.dataset.k;if(k){$('#dg').close();C[k]()}}})}
+};
+document.addEventListener('click',e=>{const c=e.target.dataset.c;if(c&&C[c]&&!e.target.closest('dialog'))C[c]()});
+document.addEventListener('keydown',e=>{if(!(e.ctrlKey||e.metaKey))return;const k=e.key.toLowerCase();
+ if(k=='s'){e.preventDefault();C.save()}else if(k=='k'){e.preventDefault();C.pal()}else if(k=='e'){e.preventDefault();C.zip()}});
+window.addEventListener('beforeunload',()=>S.urls.forEach(URL.revokeObjectURL));
+
+/* ===== SYNTAX HIGHLIGHTING (known types only; others stay plain text) ===== */
+const KW=new Set(('if else for while do return function const let var class new import from export default async await try catch finally throw switch case break continue in of typeof this super extends static public private protected void int float double char long bool boolean string struct enum interface namespace using package fn pub mut impl use mod trait match loop where def lambda pass with as is not and or elif except raise yield global self end then local func type go defer select chan range val fun object when echo signal onready uniform out vec2 vec3 vec4 float4 true false null undefined None True False nil SELECT FROM WHERE CREATE TABLE INSERT INTO VALUES PRIMARY KEY NOT NULL RUN CMD WORKDIR COPY').split(' '));
+const HC=new Set('py rb sh ps1 yaml yml toml ini env gd gitignore dockerfile'.split(' ')),DC=new Set(['sql','lua']),CL=new Set('js ts c cpp cs java kt dart swift rs go php glsl hlsl css json jsonc frag vert'.split(' ')),MK=new Set(['html','htm','xml','svg']);
+const STR=/("(?:\\.|[^"\\\n])*"|'(?:\\.|[^'\\\n])*'|`(?:\\.|[^`\\])*`)/.source,TAIL=/\b(\d[\w.]*)\b|\b([A-Za-z_]\w*)(\s*\()?/.source;
+const CMT={h:/#.*/.source,d:/--.*/.source,c:/\/\/.*|\/\*[\s\S]*?\*\//.source};
+function hl(code,e){
+ if(MK.has(e))return esc(code).replace(/(&lt;!--[\s\S]*?--&gt;)|(&lt;\/?[\w:-]+)|(&quot;.*?&quot;)|(\s[\w:-]+(?==))/g,(m,a,b,c,d)=>a?`<span class=c>${a}</span>`:b?`<span class=tg>${b}</span>`:c?`<span class=s>${c}</span>`:`<span class=at>${d}</span>`);
+ const k=HC.has(e)?'h':DC.has(e)?'d':CL.has(e)?'c':'';if(!k)return esc(code);
+ const re=new RegExp('('+CMT[k]+(e=='php'?'|'+CMT.h:'')+')|'+STR+'|'+TAIL,'g');
+ let o='',i=0,m;while((m=re.exec(code))){o+=esc(code.slice(i,m.index));i=re.lastIndex;
+  o+=m[1]?`<span class=c>${esc(m[1])}</span>`:m[2]?`<span class=s>${esc(m[2])}</span>`:m[3]?`<span class=n>${m[3]}</span>`:KW.has(m[4])?`<span class=k>${m[4]}</span>`+(m[5]||''):m[5]?`<span class=f>${m[4]}</span>${m[5]}`:m[4]}
+ return o+esc(code.slice(i))}
+function hlDraw(){const t=$('#ta'),h=$('#hl'),v=t.value;h.innerHTML=(v.length>2e5?esc(v):hl(v,ext(S.cur)))+'\n';h.scrollTop=t.scrollTop;h.scrollLeft=t.scrollLeft}
+$('#ta').addEventListener('scroll',e=>{const h=$('#hl');h.scrollTop=e.target.scrollTop;h.scrollLeft=e.target.scrollLeft});
+
+/* ===== WINDOW MANAGER (move, resize, minimize, maximize, close, taskbar) ===== */
+const WM={ids:['w-ex','w-ed','w-pv','w-lg','w-st','w-ac','w-pj','w-js'],z:10,L:{},
+ el:i=>document.getElementById(i),M:()=>$('#main'),
+ tile(){const W=WM.M().clientWidth,H=WM.M().clientHeight,g=6,r=(x,y,w,h,s='')=>({x,y,w,h,s});
+  if(W<900)return{'w-ex':r(0,0,W,H*.3),'w-ed':r(0,H*.3+g,W,H*.7-g),'w-pv':r(0,0,W,H,'min'),'w-lg':r(0,0,W,H,'min'),'w-st':r(0,0,W,H,'min'),'w-ac':r(0,0,W,H,'min'),'w-pj':r(0,0,W,H,'min'),'w-js':r(0,0,W,H,'min')};
+  const lw=250,rw=320,bh=Math.min(130,H*.25),mh=H-bh-g;
+  return{'w-ex':r(0,0,lw,mh),'w-ed':r(lw+g,0,W-lw-rw-2*g,mh),'w-pv':r(W-rw,0,rw,mh*.2),'w-ac':r(W-rw,mh*.2+g,rw,mh*.2-g),'w-js':r(W-rw,mh*.4+g,rw,mh*.6-g),'w-pj':r(lw+g,mh*.45,W-lw-rw-2*g,mh*.55,'min'),'w-lg':r(0,mh+g,W/2-g/2,bh),'w-st':r(W/2+g/2,mh+g,W/2-g/2,bh)}},
+ init(){let sv=null;try{sv=JSON.parse(localStorage.getItem('kvect.wm'))}catch{}
+  this.ids.forEach(i=>{const w=this.el(i),t=document.createElement('div');t.className='tbar';
+   t.innerHTML=`<span>${w.dataset.title}</span><button data-w="min" title="Minimize" aria-label="Minimize">–</button><button data-w="max" title="Maximize" aria-label="Maximize">□</button><button data-w="x" title="Close" aria-label="Close">✕</button>`;w.prepend(t);
+   w.addEventListener('pointerdown',()=>this.focus(w),true);t.addEventListener('pointerdown',e=>this.drag(e,w));
+   t.addEventListener('dblclick',e=>{if(!e.target.dataset.w)this.max(w)});
+   t.addEventListener('click',e=>{const a=e.target.dataset.w;if(a=='max')this.max(w);else if(a)this.state(w,a)});
+   new ResizeObserver(()=>{clearTimeout(this.t);this.t=setTimeout(()=>{this.sync();this.snapAll();this.save()},400)}).observe(w)});
+  const T=this.tile();this.L={};this.ids.forEach(i=>this.L[i]=(sv&&sv[i])||T[i]);{const J=this.L['w-js'];if(J.h<260||J.w<300)this.L['w-js']=T['w-js']}this.applyAll();
+  window.addEventListener('resize',()=>this.clamp());$('#tb').addEventListener('click',e=>{const i=e.target.dataset.wid;if(!i)return;const w=this.el(i);if(this.L[i].s)this.state(w,'');this.focus(w)})},
+ place(w){const s=this.L[w.id];Object.assign(w.style,{left:s.x+'px',top:s.y+'px',width:s.w+'px',height:s.h+'px'});w.classList.toggle('min',!!s.s)},
+ applyAll(){this.ids.forEach(i=>this.place(this.el(i)));this.bar()},
+ state(w,s){this.L[w.id].s=s;this.place(w);this.bar();this.save();try{pjDraw();JSX.sync()}catch{}},
+ focus(w){this.ids.forEach(i=>this.el(i).classList.remove('top'));w.style.zIndex=++this.z;w.classList.add('top')},
+ sync(){this.ids.forEach(i=>{const w=this.el(i),s=this.L[i];if(s.s||s.mx||!w.offsetWidth)return;Object.assign(s,{x:w.offsetLeft,y:w.offsetTop,w:w.offsetWidth,h:w.offsetHeight})})},
+ save(){try{localStorage.setItem('kvect.wm',JSON.stringify(this.L))}catch{}},
+ snapAll(){const g=LY.snap;if(!g)return;this.ids.forEach(i=>{const s=this.L[i];if(s.s||s.mx)return;['x','y','w','h'].forEach(k=>s[k]=Math.max(k=='x'||k=='y'?0:90,Math.round(s[k]/g)*g));this.place(this.el(i))})},
+ max(w){const s=this.L[w.id],M=this.M();if(s.mx){Object.assign(s,s.prev,{mx:0})}else{this.sync();s.prev={x:s.x,y:s.y,w:s.w,h:s.h};Object.assign(s,{x:0,y:0,w:M.clientWidth,h:M.clientHeight,mx:1})}this.place(w);this.focus(w);this.save()},
+ drag(e,w){const s=this.L[w.id];if(e.target.dataset.w||s.mx||LY.lock)return;const t=e.currentTarget,sx=e.clientX,sy=e.clientY,x0=w.offsetLeft,y0=w.offsetTop,M=this.M();t.setPointerCapture(e.pointerId);
+  const mv=v=>{w.style.left=Math.max(60-w.offsetWidth,Math.min(M.clientWidth-60,x0+v.clientX-sx))+'px';w.style.top=Math.max(0,Math.min(M.clientHeight-30,y0+v.clientY-sy))+'px'};
+  const up=()=>{t.removeEventListener('pointermove',mv);t.removeEventListener('pointerup',up);this.sync();this.snapAll();this.save()};t.addEventListener('pointermove',mv);t.addEventListener('pointerup',up)},
+ clamp(){const M=this.M();this.ids.forEach(i=>{const s=this.L[i];if(s.mx){s.w=M.clientWidth;s.h=M.clientHeight}s.x=Math.max(60-s.w,Math.min(M.clientWidth-60,s.x));s.y=Math.max(0,Math.min(M.clientHeight-30,s.y))});this.applyAll()},
+ cmd(a){const M=this.M();if(a=='tile'){this.L=this.tile()}else if(a=='cas')this.ids.forEach((i,n)=>this.L[i]={x:n*28,y:n*28,w:M.clientWidth*.55,h:M.clientHeight*.6,s:''});else this.ids.forEach(i=>this.L[i].s='');this.applyAll();this.save()},
+ bar(){$('#tb').innerHTML=this.ids.map(i=>{const s=this.L[i];return`<button data-wid="${i}" class="${s.s?'m':''}">${esc(this.el(i).dataset.title)}${s.s=='min'?' (minimized)':s.s=='x'?' (closed)':''}</button>`}).join('')}
+};
+
+/* ===== ACTION PRESETS: stress-preset generator ===== */
+const STK=[
+['Web SPA',['src/components','src/pages','public/assets/images','tests'],[['index.html','<!DOCTYPE html>\n<title>{{name}}</title>\n<script type="module" src="src/main.js"><\/script>\n'],['src/main.js','console.log("{{name}} started");\n'],['src/components/%.js','export const % = () => `<section id="%">%</section>`;\n'],['tests/%.test.js','import {%} from "../src/components/%.js";\nconsole.assert(%().includes("%"));\n'],['README.md','# {{name}}\n\nWeb SPA stress preset.\n']]],
+['Python package',['pkg','tests','scripts'],[['pyproject.toml','[project]\nname = "{{name}}"\nversion = "0.1.0"\n'],['pkg/__init__.py',''],['pkg/%.py','def run_%():\n    return "%"\n'],['tests/test_%.py','from pkg.% import run_%\n\ndef test_%():\n    assert run_%() == "%"\n'],['requirements.txt','pytest\n'],['.gitignore','__pycache__/\n.venv/\n']]],
+['Node monorepo',['packages','tools'],[['package.json','{\n  "name": "{{name}}",\n  "private": true,\n  "workspaces": ["packages/*"]\n}\n'],['packages/%/package.json','{\n  "name": "@{{name}}/%",\n  "version": "1.0.0"\n}\n'],['packages/%/src/index.ts','export const % = (): string => "%";\n'],['tsconfig.json','{ "compilerOptions": { "strict": true } }\n']]],
+['Rust workspace',['crates'],[['Cargo.toml','[workspace]\nmembers = ["crates/*"]\n'],['crates/%/Cargo.toml','[package]\nname = "%"\nversion = "0.1.0"\nedition = "2021"\n'],['crates/%/src/lib.rs','pub fn %() -> &\'static str {\n    "%"\n}\n']]],
+['Go services',['deploy','services'],[['go.work','go 1.21\n'],['services/%/main.go','package main\n\nimport "fmt"\n\nfunc main() { fmt.Println("%") }\n'],['services/%/Dockerfile','FROM golang:1.21\nCOPY . .\nRUN go build -o app\n'],['deploy/%.yaml','name: %\nreplicas: 2\n']]],
+['Java Maven',['src/main/java','src/test/java'],[['pom.xml','<project>\n  <artifactId>{{name}}</artifactId>\n  <version>1.0</version>\n</project>\n'],['src/main/java/com/example/%/Service.java','package com.example.%;\n\npublic class Service {\n    public String name() { return "%"; }\n}\n'],['src/test/java/com/example/%/ServiceTest.java','package com.example.%;\n\nclass ServiceTest {}\n']]],
+['Godot game',['assets/sprites','assets/audio','assets/fonts'],[['project.godot','config_version=5\n\n[application]\nconfig/name="{{name}}"\n'],['scenes/%.tscn','[gd_scene format=3]\n\n[node name="%" type="Node2D"]\n'],['scripts/%.gd','extends Node2D\n\nfunc _ready():\n\tprint("%")\n']]],
+['Unity-style game',['Assets/Scenes','Assets/Prefabs'],[['Assets/Scripts/%.cs','using UnityEngine;\n\npublic class % : MonoBehaviour {\n    void Start() { Debug.Log("%"); }\n}\n'],['Packages/manifest.json','{ "dependencies": {} }\n'],['ProjectSettings/ProjectVersion.txt','m_EditorVersion: 6000.0.0\n']]],
+['Docs site',['docs/assets'],[['mkdocs.yml','site_name: {{name}}\n'],['docs/index.md','# {{name}}\n'],['docs/%.md','# %\n\nDocumentation page for %.\n\n- item one\n- item two\n']]],
+['Data pipeline',['data/clean','logs'],[['pipelines/%.sql','SELECT * FROM raw_% WHERE active = 1;\n'],['data/raw/%.csv','id,name\n1,%\n2,%-b\n'],['config/%.yaml','source: raw_%\nsink: clean_%\n'],['notebooks/%.md','# Notebook %\n']]]];
+function EX(v){const o=[];let d='deep';o.push({t:'d',p:d});
+ for(let i=1;i<=v+2;i++){d+='/level'+i;o.push({t:'d',p:d},{t:'f',p:d+'/note'+i+'.txt',c:'Level '+i+'\n'+'The quick brown fox jumps over the lazy dog. '.repeat(i*3)+'\n'})}
+ o.push({t:'d',p:'bulk'});for(let i=0;i<v*6;i++)o.push({t:'f',p:'bulk/item_'+String(i).padStart(3,'0')+'.txt',c:'Item '+i+' of set '+v+'\n'+'lorem ipsum dolor sit amet\n'.repeat(3)});
+ o.push({t:'f',p:'spaced folder/ünï cödé.txt',c:'Unicode: ñ é ü 日本語 ✓\n'},{t:'f',p:'dir.with.dots/a.b.c.md',c:'# dots\n'},{t:'f',p:'.hidden/.env.example',c:'KEY=value\n'});return o}
+function genPresets(){const MN='auth users orders billing search media alerts reports sync admin cache events'.split(' '),out=[];
+ STK.forEach((st,si)=>{for(let v=1;v<=5;v++){const M=2+v*2,ops=[],nn=String(si*5+v).padStart(2,'0');
+  st[1].forEach(d=>ops.push({t:'d',p:d}));
+  st[2].forEach(([p,c])=>{if(p.includes('%'))for(let m=0;m<M;m++)ops.push({t:'f',p:p.replaceAll('%',MN[m]),c:c.replaceAll('%',MN[m])});else ops.push({t:'f',p,c})});
+  EX(v).forEach(o=>ops.push(o));
+  out.push({id:'g'+nn,gen:1,name:'Stress '+nn+' · '+st[0]+' ('+M+' modules, depth '+(v+2)+')',root:'S'+nn+'-'+st[0].replace(/\W+/g,''),ops,hist:[]})}});return out}
+/* ===== ACTION RECORDER / PRESETS ===== */
+const newId=()=>'p'+Date.now().toString(36)+Math.random().toString(36).slice(2,6);
+const PS={list:[],
+ async load(){try{this.list=(await Store.tx('readonly',s=>s.get('__presets__')))||[]}catch{this.list=[]}},
+ async persist(){try{await Store.tx('readwrite',s=>s.put(PS.list,'__presets__'))}catch(e){log('Preset save failed: '+(e&&e.name=='QuotaExceededError'?'storage quota exceeded':e),'er')}},
+ add(p){while(this.list.some(x=>x.name==p.name))p.name+=' (2)';this.list.push(p)}};
+const REC={on:false,base:'',prev:new Set(),hist:[],
+ snap(){const b=this.base+'/',r=new Set();for(const d of FS.dirs())if(d.startsWith(b))r.add(d.slice(b.length)+'/');for(const p in S.files)if(p.startsWith(b))r.add(p.slice(b.length));return r},
+ start(){let n=prompt('Dummy root folder name to record in:','Dummy');if(n===null)return;n=clean(n);if(!n)return log('A folder name is required','wn');
+  const t=FS.tdir(),b=clean((t?t+'/':'')+n);
+  if(FS.dirs().has(b)){if(!confirm('/'+b+' exists. Record inside it? Existing contents become part of the preset.'))return}else S.folders.add(b);
+  this.on=true;this.base=b;this.hist=['start recording in /'+b];S.exp.add(b);S.sel=b;this.prev=this.snap();
+  log('● Recording in /'+b+'. Create folders/files inside it (keep it selected), then press Stop.','wn');this.btn();render()},
+ tick(){if(!this.on)return;
+  if(!FS.dirs().has(this.base)){log('Recording folder was removed or renamed — recording cancelled','er');this.on=false;this.btn();return}
+  const cur=this.snap(),add=[...cur].filter(x=>!this.prev.has(x)),rm=[...this.prev].filter(x=>!cur.has(x));this.prev=cur;
+  if(add.length==1&&rm.length==1)this.hist.push('rename '+rm[0]+' → '+add[0]);
+  else if(add.length+rm.length>30)this.hist.push('bulk change: +'+add.length+' −'+rm.length);
+  else{add.forEach(x=>this.hist.push((x.endsWith('/')?'mkdir ':'create ')+x));rm.forEach(x=>this.hist.push('delete '+x))}
+  if(this.hist.length>600)this.hist.splice(0,100)},
+ stop(){const b=this.base+'/',ops=[];let skip=0;
+  [...FS.dirs()].filter(d=>d.startsWith(b)).sort().forEach(d=>ops.push({t:'d',p:d.slice(b.length)}));
+  Object.keys(S.files).filter(q=>q.startsWith(b)).sort().forEach(q=>{const f=S.files[q];if(f.b)skip++;else ops.push({t:'f',p:q.slice(b.length),c:f.c})});
+  this.on=false;this.btn();
+  if(!ops.length)return log('Nothing recorded — preset not saved','wn');
+  const name=prompt('Save as action preset named:',this.base.split('/').pop());if(name===null)return log('Recording discarded','wn');
+  PS.add({id:newId(),name:name.trim()||'Preset',root:this.base.split('/').pop(),ops,hist:this.hist.slice(-300)});PS.persist();acDraw();
+  log('Preset saved: '+ops.length+' items'+(skip?', '+skip+' binary file(s) skipped (presets are text-only)':''),'ok')},
+ btn(){$('#recb').textContent=this.on?'■ Stop rec':'● Rec';acDraw()}};
+function place(pr,base,nm){let d=0,f=0,k=0;const D=FS.dirs(),sub=c=>c.replace(/\{\{name\}\}/g,nm);
+ for(const o of pr.ops){const q=clean(base+'/'+o.p);if(!q)continue;
+  if(o.t=='d'){if(S.files[q]){k++;continue}S.folders.add(q);d++}else{if(D.has(q)){k++;continue}S.files[q]={c:sub(o.c||'')};f++}}
+ if(base)S.folders.add(base);return[d,f,k]}
+function applyPreset(pr){const t=FS.tdir();
+ let w=prompt('Apply "'+pr.name+'" into /'+t+'\nWrap in a new folder named (leave blank to place contents directly):',pr.root||'');if(w===null)return;w=clean(w);
+ const base=clean(t+'/'+w),cf=pr.ops.filter(o=>o.t=='f'&&S.files[clean(base+'/'+o.p)]).length;
+ if(cf&&!confirm(cf+' existing file(s) will be overwritten. Continue?'))return;
+ const[d,f,k]=place(pr,base,w||t.split('/').pop()||S.name);
+ S.exp.add(t);if(base)S.exp.add(base);S.sel=base||t;
+ log('Applied "'+pr.name+'" to /'+base+': '+d+' folders, '+f+' files'+(k?', '+k+' skipped (name conflicts)':''),k?'wn':'ok');render()}
+async function stress(){const G=PS.list.filter(x=>x.gen);if(!G.length)return log('Generate the 50 test presets first','wn');
+ if(!confirm('Apply all '+G.length+' stress presets into /StressTest? This creates thousands of files.'))return;
+ const t0=performance.now();let d=0,f=0;for(const x of G){const r=place(x,'StressTest/'+x.root,x.root);d+=r[0];f+=r[1]}
+ S.exp.add('StressTest');render();const ms=Math.round(performance.now()-t0);
+ log('Stress test: '+d+' folders, '+f+' files in '+ms+' ms; project has '+Object.keys(S.files).length+' files. Saving…','ok');await Store.save()}
+async function genAll(){if(PS.list.some(x=>x.gen)&&!confirm('Replace the existing generated stress presets?'))return;
+ PS.list=PS.list.filter(x=>!x.gen).concat(genPresets());await PS.persist();acDraw();log('50 stress presets generated (complex nested text structures)','ok')}
+const pjson=a=>new Blob([JSON.stringify({kvectPresets:1,presets:a},null,1)],{type:'application/json'});
+function pimport(){const i=document.createElement('input');i.type='file';i.accept='.json,application/json';
+ i.onchange=async()=>{try{const j=JSON.parse(await i.files[0].text()),a=Array.isArray(j)?j:j.presets;if(!Array.isArray(a))throw Error('not a KVect preset file');let n=0,bad=0;
+  for(const q of a){if(!q||typeof q.name!='string'||!Array.isArray(q.ops)||q.ops.length>50000){bad++;continue}
+   const ops=[];for(const o of q.ops){if(!o||typeof o.p!='string')continue;const c=clean(o.p);if(c)ops.push(o.t=='d'?{t:'d',p:c}:{t:'f',p:c,c:String(o.c??'')})}
+   PS.add({id:newId(),name:q.name.slice(0,80),root:clean(String(q.root||'')).slice(0,60),ops,hist:Array.isArray(q.hist)?q.hist.slice(0,300).map(String):[]});n++}
+  await PS.persist();acDraw();log('Imported '+n+' preset(s)'+(bad?', '+bad+' invalid skipped':'')+' (data only, nothing executed)',bad?'wn':'ok')}catch(e){log('Import failed: '+e.message,'er')}};i.click()}
+function acDraw(){const q=($('#pq2').value||'').toLowerCase(),t=FS.tdir();
+ let h='<div style="color:var(--m);margin-bottom:6px">Apply target: <b>/'+esc(t)+'</b> — select a folder in the Explorer, then press Apply.</div>';
+ if(REC.on)h+='<div class="wn"><b>● Recording in /'+esc(REC.base)+'</b></div><pre>'+esc(REC.hist.slice(-40).join('\n'))+'</pre>';
+ h+=PS.list.filter(x=>x.name.toLowerCase().includes(q)).map(x=>'<div class="r" style="display:flex;gap:4px;align-items:center;white-space:normal"><span style="flex:1">'+esc(x.name)+' <small style="color:var(--m)">'+x.ops.filter(o=>o.t=='d').length+'📁 '+x.ops.filter(o=>o.t=='f').length+'📄</small></span><button data-pa="ap:'+x.id+'">Apply</button><button data-pa="hs:'+x.id+'" title="Show recorded history in log">Log</button><button data-pa="ex:'+x.id+'">Export</button><button data-pa="dl:'+x.id+'" aria-label="Delete">✕</button></div>').join('')||'<div class="em">No presets yet. Record one, import JSON, or generate the 50 test presets.</div>';
+ $('#ac').innerHTML=h}
+$('#ac').addEventListener('click',e=>{const a=e.target.dataset.pa;if(!a)return;const k=a.slice(0,2),pr=PS.list.find(x=>x.id==a.slice(3));if(!pr)return;
+ if(k=='ap')applyPreset(pr);else if(k=='ex')dl(pjson([pr]),pr.name.replace(/\W+/g,'_')+'.json');
+ else if(k=='hs'){(pr.hist||[]).length?(pr.hist.forEach(l=>log(l)),log('History of "'+pr.name+'":','ok')):log('No history stored for this preset','wn')}
+ else if(k=='dl'&&confirm('Delete preset "'+pr.name+'"?')){PS.list=PS.list.filter(x=>x!==pr);PS.persist();acDraw()}});
+$('#pq2').addEventListener('input',acDraw);
+
+/* ===== MULTI-PROJECT (tabs + side-by-side overview) ===== */
+const PJ={list:[{id:1}],a:0,n:1,fresh:false,shown:false,
+ stash(){Object.assign(this.list[this.a],{name:S.name,files:S.files,folders:S.folders,sel:S.sel,cur:S.cur,open:S.open,exp:S.exp})},
+ load(r){Object.assign(S,{name:r.name,files:r.files,folders:r.folders,sel:r.sel,cur:r.cur,open:r.open,exp:r.exp});render()},
+ add(){this.stash();const r={id:++this.n,name:'Untitled',files:{},folders:new Set(),sel:'',cur:'',open:[],exp:new Set([''])};this.list.push(r);this.a=this.list.length-1;this.fresh=true;SES.add('project','new project tab');this.load(r);
+  if(!this.shown){this.shown=true;WM.state(WM.el('w-pj'),'')}},
+ go(i){if(i==this.a)return;this.stash();this.a=i;SES.add('project','switch to '+this.list[i].name);this.load(this.list[i])},
+ close(i){if(this.list.length<2)return log('Keep at least one project open','wn');
+  if(!confirm('Close "'+(i==this.a?S.name:this.list[i].name)+'"? Unsaved changes are lost (use Save first).'))return;
+  if(i==this.a){this.list.splice(i,1);this.a=Math.min(i,this.list.length-1);this.load(this.list[this.a])}else{this.stash();this.list.splice(i,1);if(i<this.a)this.a--;pjDraw()}},
+ copyTo(i){if(i==this.a)return;if(!S.sel)return log('Select a file or folder in the Explorer first','wn');this.stash();const t=this.list[i],s0=S.sel;let n=0;
+  const put=(q,f)=>{if(t.files[q]&&!confirm('Overwrite '+q+' in "'+t.name+'"?'))return;t.files[q]=f;n++};
+  if(FS.isDir(s0)){for(const d of FS.dirs())if(d==s0||d.startsWith(s0+'/'))t.folders.add(d);for(const q in S.files)if(q.startsWith(s0+'/'))put(q,{...S.files[q]})}else put(s0,{...S.files[s0]});
+  log('Copied '+n+' file(s) from "'+S.name+'" to "'+t.name+'"','ok');pjDraw()}};
+function ptree(files,folders){const d=new Set(folders),f=Object.keys(files);
+ for(const q of f){const a=q.split('/');a.pop();let c='';for(const x of a){c+=(c?'/':'')+x;d.add(c)}}
+ const L=[...[...d].map(x=>x+'/'),...f].sort();
+ return L.slice(0,300).map(q=>{const dir=q.endsWith('/'),a=(dir?q.slice(0,-1):q).split('/');return'  '.repeat(a.length-1)+a.pop()+(dir?'/':'')}).join('\n')+(L.length>300?'\n… '+(L.length-300)+' more':'')}
+function pjDraw(){
+ $('#pt').innerHTML=PJ.list.map((r,i)=>'<span class="pj '+(i==PJ.a?'s':'')+'" data-pj="'+i+'">'+esc(i==PJ.a?S.name:r.name||'Untitled')+'<b data-px="'+i+'" title="Close project">✕</b></span>').join('')+'<button data-c="padd">＋ Project</button>';
+ if(WM.el('w-pj').classList.contains('min'))return;
+ $('#pjv').innerHTML=PJ.list.map((r,i)=>{const a=i==PJ.a,x=a?S:r;return'<div class="pjc '+(a?'s':'')+'"><div class="pjh" data-pj="'+i+'"><b>'+esc(x.name||'Untitled')+'</b> <small>'+Object.keys(x.files).length+' files</small>'+(a?' <i>(active)</i>':' <button data-pcp="'+i+'">Copy selection here</button>')+'</div><pre>'+esc(ptree(x.files,x.folders))+'</pre></div>'}).join('')}
+$('#pt').addEventListener('click',e=>{const x=e.target.dataset.px,j=e.target.closest('[data-pj]');if(x!=null)PJ.close(+x);else if(j)PJ.go(+j.dataset.pj)});
+$('#pjv').addEventListener('click',e=>{const c=e.target.dataset.pcp,h=e.target.closest('.pjh');if(c!=null)PJ.copyTo(+c);else if(h)PJ.go(+h.dataset.pj)});
+async function saveAll(){PJ.stash();let n=0;for(const r of PJ.list){if(!r.name)continue;try{await Store.tx('readwrite',q=>q.put({name:r.name,files:r.files,folders:[...r.folders]},r.name));n++}catch(e){log('Save failed for "'+r.name+'": '+e,'er')}}log('Saved '+n+' project(s)','ok')}
+
+/* ===== SESSION RECORDER (timeline of everything: new project → export) ===== */
+const SES={on:false,ev:[],prev:{},nm:{},le:null,tm:0,
+ add(k,d){if(!this.on)return;this.ev.push({t:Date.now(),k,d:String(d).slice(0,300),p:S.name});if(this.ev.length>5000)this.ev.splice(0,1000);this.save()},
+ edit(q,n){if(!this.on)return;const now=Date.now();if(this.le&&this.le.q==q&&now-this.le.e.t<8000){this.le.e.d='edit '+q+' ('+n+' chars)';return}this.add('edit','edit '+q+' ('+n+' chars)');this.le={q,e:this.ev[this.ev.length-1]}},
+ base(){const id=PJ.list[PJ.a].id,c=new Set();for(const d of FS.dirs())c.add(d+'/');for(const q in S.files)c.add(q);this.prev[id]=c;this.nm[id]=S.name},
+ tick(){if(!this.on)return;const id=PJ.list[PJ.a].id,pv=this.prev[id],nm=this.nm[id];this.base();if(!pv)return;
+  if(nm&&nm!=S.name)this.add('project',nm+' → '+S.name);const cur=this.prev[id],add=[...cur].filter(x=>!pv.has(x)),rm=[...pv].filter(x=>!cur.has(x));
+  if(add.length==1&&rm.length==1)this.add('rename',rm[0]+' → '+add[0]);else if(add.length+rm.length>30)this.add('bulk','+'+add.length+' −'+rm.length);
+  else{add.forEach(x=>this.add(x.endsWith('/')?'mkdir':'create',x));rm.forEach(x=>this.add('delete',x))}},
+ start(){if(this.ev.length&&!confirm('Discard the previous timeline and start a new session?'))return;this.ev=[];this.prev={};this.nm={};this.on=true;this.base();this.btn();this.add('session','recording started');log('● Session recording: everything you do is logged until you press Stop','wn')},
+ stop(){this.add('session','recording stopped');this.on=false;this.btn();this.save();
+  if(confirm('Session stopped ('+this.ev.length+' events). Also save the active project\'s final structure as an action preset?')){const ops=[];[...FS.dirs()].sort().forEach(d=>ops.push({t:'d',p:d}));Object.keys(S.files).sort().forEach(q=>{const f=S.files[q];if(!f.b)ops.push({t:'f',p:q,c:f.c})});
+   PS.add({id:newId(),name:'Session · '+S.name+' · '+new Date().toLocaleString(),root:S.name,ops,hist:this.ev.slice(-300).map(e=>e.k+': '+e.d)});PS.persist();acDraw()}
+  sesDlg()},
+ btn(){$('#sesb').textContent=this.on?'■ Stop session':'● Session'},
+ save(){clearTimeout(this.tm);this.tm=setTimeout(()=>Store.tx('readwrite',q=>q.put({ev:SES.ev},'__session__')).catch(()=>{}),1500)},
+ async load(){try{const r=await Store.tx('readonly',q=>q.get('__session__'));if(r)this.ev=r.ev||[]}catch{}}};
+function sesDlg(){const L=SES.ev,t0=L.length?L[0].t:0,fm=e=>'['+((e.t-t0)/1000).toFixed(1).padStart(7)+'s] '+e.p+' · '+e.k+' · '+e.d,txt=L.map(fm).join('\n');
+ dlg('<h3>Session timeline ('+L.length+' events)</h3><div><button data-a="txt">Export .txt</button> <button data-a="json">Export .json</button> <button data-a="clr">Clear</button></div><pre style="max-height:50vh;overflow:auto;margin-top:8px">'+esc(txt||'No events yet. Press ● Session, then work normally: create a project, edit, import, generate assets, export.')+'</pre>',a=>{
+  if(a=='txt')dl(new Blob([txt],{type:'text/plain'}),'kvect-session.txt');else if(a=='json')dl(new Blob([JSON.stringify(L,null,1)],{type:'application/json'}),'kvect-session.json');
+  else if(a=='clr'&&confirm('Clear the recorded timeline?')){SES.ev=[];SES.save();$('#dg').close()}})}
+{const _l=log;log=function(m,c){_l(m,c);SES.add('log',m)}}
+Object.keys(C).filter(k=>!['ses','seslog','pal','help'].includes(k)).forEach(k=>{const f=C[k];C[k]=function(...a){SES.add('command',k);return f.apply(this,a)}});
+
+/* ===== JSON STRUCTURE: parser (3 formats: tree, shorthand object, path list) ===== */
+function jparse(txt){let j;try{j=JSON.parse(txt)}catch(e){throw Error('Invalid JSON: '+e.message)}
+ const ops=[];let n=0,sk=0,root='';
+ const add=(t,p,c)=>{p=clean(p);if(!p)return;if(++n>50000)throw Error('Too many entries (max 50000)');ops.push(t=='d'?{t,p}:{t,p,c:String(c??'')})};
+ const node=(o,base,d)=>{if(d>40)throw Error('Nesting too deep (max 40)');if(!o||typeof o!='object')return;const nm=String(o.name??''),p=base?base+'/'+nm:nm;
+  if(o.type=='folder'||Array.isArray(o.children)){add('d',p);(o.children||[]).forEach(c=>node(c,p,d+1))}else if(o.binary)sk++;else add('f',p,o.content)};
+ const sh=(o,base,d)=>{if(d>40)throw Error('Nesting too deep (max 40)');for(const k of Object.keys(o)){const v=o[k],p=base?base+'/'+k:k;if(v&&typeof v=='object'&&!Array.isArray(v)){add('d',p);sh(v,p,d+1)}else add('f',p,typeof v=='string'?v:'')}};
+ if(Array.isArray(j))j.forEach(x=>{if(typeof x=='string')x.endsWith('/')?add('d',x,''):add('f',x,'');else node(x,'',0)});
+ else if(j&&typeof j=='object'&&(j.type||Array.isArray(j.children))){root=clean(String(j.name||''));(j.children||[]).forEach(c=>node(c,'',0))}
+ else if(j&&typeof j=='object')sh(j,'',0);else throw Error('Top level must be an object or an array');
+ return{root,ops,skipped:sk}}
+const JSX={dirty:false,
+ gen(f){const bin=q=>S.files[q].b;
+  if(f=='paths')return[...FS.dirs()].sort().map(d=>d+'/').concat(Object.keys(S.files).sort());
+  if(f=='short'){const o={},sub=(c,x)=>typeof c[x]=='object'?c[x]:(c[x]={});for(const d of FS.dirs()){let c=o;d.split('/').forEach(x=>c=sub(c,x))}
+   for(const q in S.files){if(bin(q))continue;const a=q.split('/'),nm=a.pop();let c=o;a.forEach(x=>c=sub(c,x));c[nm]=S.files[q].c}return o}
+  const R=FS.root(),walk=(n,out)=>{Object.keys(n.d).sort().forEach(k=>{const c={name:k,type:'folder',children:[]};out.push(c);walk(n.d[k],c.children)});n.f.sort().forEach(([nm,q])=>{const fl=S.files[q];out.push(fl.b?{name:nm,type:'file',binary:true,size:fl.b.size}:{name:nm,type:'file',content:fl.c})})};
+  const root={name:S.name,type:'folder',children:[]};walk(R,root.children);return root},
+ text(){return JSON.stringify(this.gen($('#jf').value),null,2)},
+ fill(){$('#jt').value=this.text();this.dirty=false;this.check()},
+ check(){const st=$('#jst');try{const r=jparse($('#jt').value),d=r.ops.filter(o=>o.t=='d').length;st.className='ok';st.textContent='✔ Valid structure: '+d+' folders, '+(r.ops.length-d)+' files'+(r.root?' · root "'+r.root+'"':'')+(r.skipped?' · '+r.skipped+' binary entr'+(r.skipped>1?'ies':'y')+' ignored (no data in JSON)':'');return r}catch(e){st.className='er';st.textContent='✖ '+e.message;return null}},
+ sync(){if(this.dirty||WM.el('w-js').classList.contains('min'))return;if(Object.keys(S.files).length>3000){$('#jst').className='wn';$('#jst').textContent='Very large project (over 3000 files): press ↻ Project to refresh';return}this.fill()},
+ put(ops,base){let d=0,f=0,k=0;const D=FS.dirs();for(const o of ops){const q=clean(base+'/'+o.p);if(!q)continue;
+  if(o.t=='d'){if(S.files[q]){k++;continue}S.folders.add(q);d++}else{if(D.has(q)){k++;continue}S.files[q]={c:o.c||''};f++}}if(base)S.folders.add(base);return[d,f,k]},
+ apply(){const r=this.check();if(!r)return log('Fix the JSON first (see the status line)','er');if(!r.ops.length)return log('Nothing to create','wn');
+  const t=FS.tdir();let w=prompt('Create structure inside /'+t+'\nWrap in a new folder named (blank = place directly):',r.root||'');if(w===null)return;w=clean(w);
+  const base=clean(t+'/'+w),cf=r.ops.filter(o=>o.t=='f'&&S.files[clean(base+'/'+o.p)]).length;
+  if(cf&&!confirm(cf+' existing file(s) will be overwritten. Continue?'))return;
+  const[d,f,k]=this.put(r.ops,base);S.exp.add(t);if(base)S.exp.add(base);S.sel=base||t;
+  log('JSON structure applied to /'+base+': '+d+' folders, '+f+' files'+(k?', '+k+' skipped (name conflicts)':''),k?'wn':'ok');render()},
+ newproj(){const r=this.check();if(!r)return log('Fix the JSON first (see the status line)','er');PJ.add();PJ.fresh=false;S.name=r.root||'Imported';
+  const[d,f]=this.put(r.ops,'');for(const x of FS.dirs())S.exp.add(x);log('New project "'+S.name+'" from JSON: '+d+' folders, '+f+' files','ok');render()},
+ imp(){const i=document.createElement('input');i.type='file';i.accept='.json,application/json';
+  i.onchange=async()=>{const f=i.files[0];if(!f)return;if(f.size>20e6)return log('JSON file too large (20 MB max)','er');
+   $('#jt').value=await f.text();this.dirty=true;const r=this.check();log('Loaded '+f.name+' into the Structure JSON window','ok');
+   if(WM.el('w-js').classList.contains('min'))WM.state(WM.el('w-js'),'');if(r)this.apply()};i.click()},
+ exp(){let t;if(this.dirty){if(!this.check())return log('Fix the JSON before exporting','er');t=$('#jt').value}else t=this.text();
+  const bin=Object.values(S.files).filter(f=>f.b).length;dl(new Blob([t],{type:'application/json'}),(clean(S.name)||'project')+'.structure.json');
+  log('Structure JSON exported'+(bin&&!this.dirty?' ('+bin+' binary file(s) are not included — use ZIP for those)':''),'ok')},
+ show(){const w=WM.el('w-js'),s=WM.L['w-js'],M=WM.M();if(s.s)WM.state(w,'');
+  if(!s.mx&&(s.w<420||s.h<300)){const W=M.clientWidth,H=M.clientHeight,nw=Math.min(W-12,640),nh=Math.min(H-12,480);Object.assign(s,{x:Math.max(0,Math.round((W-nw)/2)),y:Math.max(0,Math.round((H-nh)/2)),w:nw,h:nh});WM.place(w)}
+  WM.focus(w);WM.save();this.dirty?this.check():this.fill()},
+ fmt(){try{$('#jt').value=JSON.stringify(JSON.parse($('#jt').value),null,2);this.check()}catch(e){log('JSON error: '+e.message,'er')}}};
+$('#jt').addEventListener('input',()=>{JSX.dirty=true;JSX.check()});
+$('#jf').addEventListener('change',()=>{if(JSX.dirty&&!confirm('Replace your edited text with the project in this format?'))return;JSX.fill()});
+
+/* ===== SKINS + CUSTOM LAYOUT PRESETS ===== */
+const SKINS={'':'Default (dark/light)',xp:'Windows XP (Luna)',w95:'Windows 95/98 Classic',os9:'Mac OS 9 Platinum',aero:'Windows 7 Aero',dos:'DOS / Green Terminal'};
+/* ===== 20 MORE SKINS, each with Light + Dark (follows the Theme button). Palette: bg,panel,border,text,muted,accent,title1,title2,titleText,editor ===== */
+const SK2=[
+['win2k','Windows 2000','Tahoma,Verdana,sans-serif',['#d4d0c8','#e4e1da','#808080','#000000','#404040','#0a246a','#0a246a','#a6caf0','#ffffff','#ffffff'],['#2b2a27','#363530','#5a5850','#e8e6e0','#a8a69e','#5b8bd9','#0a246a','#3a6ea5','#ffffff','#1d1c1a']],
+['vista','Windows Vista Aero','"Segoe UI",Tahoma,sans-serif',['#e3edf8','#f4f8fd','#8fb0d6','#0f2237','#4a5f78','#1f7ae0','#bcd7f5','#7fb0e8','#0f2237','#ffffff'],['#14202e','#1c2c3f','#35506f','#e6f0fb','#93a9c2','#4aa3ff','#2b4a73','#1a2f4d','#ffffff','#0e1722']],
+['metro','Windows 8 Metro','"Segoe UI",Arial,sans-serif',['#f2f2f2','#ffffff','#cfcfcf','#1a1a1a','#666666','#0078d7','#0078d7','#0078d7','#ffffff','#ffffff'],['#1b1b1b','#262626','#3d3d3d','#f0f0f0','#a0a0a0','#2d9cf0','#005a9e','#005a9e','#ffffff','#121212']],
+['win31','Windows 3.1','Arial,Helvetica,sans-serif',['#c0c0c0','#d8d8d8','#404040','#000000','#404040','#000080','#000080','#000080','#ffffff','#ffffff'],['#1c1c3a','#26264a','#5a5a8a','#e8e8ff','#a0a0cc','#55ffff','#0000a8','#0000a8','#ffffff','#10102a']],
+['aqua','Mac OS X Aqua','"Lucida Grande",Helvetica,sans-serif',['#e8e8e8','#f6f6f6','#b4b4b4','#1a1a1a','#666666','#3b7bd9','#f2f2f2','#cfcfcf','#222222','#ffffff'],['#2a2c30','#34373c','#4b4f56','#ececec','#9a9fa8','#4f9bff','#5a5d63','#3f4247','#f0f0f0','#1e2024']],
+['sys7','Mac System 7','Geneva,Chicago,sans-serif',['#dddddd','#ffffff','#555555','#000000','#444444','#333333','#ffffff','#cccccc','#000000','#ffffff'],['#1e1e1e','#2a2a2a','#777777','#f5f5f5','#aaaaaa','#f5f5f5','#444444','#2e2e2e','#ffffff','#111111']],
+['ubuntu','Ubuntu Ambiance','Ubuntu,Cantarell,sans-serif',['#f2f1f0','#faf9f8','#cdc7c2','#3c3b37','#77716a','#e95420','#e8e4df','#cfc9c2','#3c3b37','#ffffff'],['#2c2b28','#3a3935','#55534d','#eeeeec','#aea79f','#f07746','#4a4843','#33322e','#f2f1ef','#201f1d']],
+['clearlooks','GNOME Clearlooks','"DejaVu Sans",Cantarell,sans-serif',['#edeceb','#f7f6f5','#b6b2ac','#2e3436','#6b7275','#4a90d9','#dad7d0','#c4c0b8','#2e3436','#ffffff'],['#2d3033','#383c3f','#50555a','#e6e8e9','#9ba2a6','#6aa7e6','#4b4f54','#373a3e','#eeeeee','#202325']],
+['beos','BeOS','"Be Sans",Verdana,sans-serif',['#d8d8d8','#ececec','#8a8a8a','#000000','#4d4d4d','#2b6cb0','#ffcb2f','#ffcb2f','#000000','#ffffff'],['#26262a','#313136','#55555c','#eeeeee','#a6a6ad','#ffcb2f','#b88a00','#8a6700','#ffffff','#1a1a1d']],
+['amiga','Amiga Workbench','Topaz,"Courier New",monospace',['#aaaaaa','#c8c8c8','#333333','#000000','#333333','#ff8800','#0055aa','#0055aa','#ffffff','#ffffff'],['#002244','#003366','#0077cc','#ffffff','#99ccee','#ff8800','#ff8800','#ff8800','#000000','#001428']],
+['atarist','Atari ST GEM','Arial,Helvetica,sans-serif',['#ffffff','#ffffff','#000000','#000000','#333333','#000000','#ffffff','#dddddd','#000000','#ffffff'],['#000000','#111111','#bbbbbb','#ffffff','#bbbbbb','#ffffff','#222222','#444444','#ffffff','#000000']],
+['nextstep','NeXTSTEP','Helvetica,Arial,sans-serif',['#aaaaaa','#c0c0c0','#555555','#000000','#333333','#222222','#555555','#333333','#ffffff','#d8d8d8'],['#1a1a1a','#2a2a2a','#555555','#dddddd','#999999','#bbbbbb','#444444','#222222','#eeeeee','#101010']],
+['motif','CDE / Motif','Helvetica,Arial,sans-serif',['#aeb2c3','#bfc3d3','#6b6f80','#000000','#333a4a','#4d6fa0','#8f94ab','#7a7f98','#000000','#e6e8ef'],['#2b2f3d','#373c4d','#5a6075','#e8eaf2','#a2a8bd','#8fa6d6','#4a5068','#3a4054','#ffffff','#1e212c']],
+['c64','Commodore 64','"Courier New",monospace',['#b8b0ff','#d6d1ff','#40318d','#40318d','#5a4ab0','#40318d','#40318d','#40318d','#b8b0ff','#e8e5ff'],['#40318d','#4a3b9c','#7869c4','#c4bcff','#8f86e0','#a59df5','#7869c4','#7869c4','#ffffff','#352879']],
+['amber','Amber CRT','"Courier New",monospace',['#fbf1d9','#fff8e6','#c9a257','#4a3200','#85621a','#cc7a00','#cc7a00','#e09a1f','#ffffff','#fffdf5'],['#120a00','#1c1100','#7a4d00','#ffb000','#b87a00','#ffb000','#7a4d00','#4d3000','#ffcf66','#0a0500']],
+['solarized','Solarized','',['#fdf6e3','#eee8d5','#93a1a1','#586e75','#839496','#268bd2','#eee8d5','#e0d9c2','#586e75','#fdf6e3'],['#002b36','#073642','#586e75','#93a1a1','#657b83','#268bd2','#073642','#0a4452','#93a1a1','#00212b']],
+['nord','Nord','',['#e5e9f0','#eceff4','#c2cad8','#2e3440','#5e6a80','#5e81ac','#d8dee9','#c5cedd','#2e3440','#f7f9fc'],['#2e3440','#3b4252','#4c566a','#eceff4','#a3acbf','#88c0d0','#434c5e','#3b4252','#eceff4','#272c36']],
+['dracula','Dracula / Alucard','',['#f8f8f2','#fffffb','#cfcfc2','#1f1f1f','#6c6c6c','#7c4dcc','#e9e5f5','#d9d1ee','#1f1f1f','#ffffff'],['#282a36','#343746','#44475a','#f8f8f2','#a5a8c0','#bd93f9','#44475a','#343746','#f8f8f2','#1e1f29']],
+['gruvbox','Gruvbox','',['#fbf1c7','#f2e5bc','#bdae93','#3c3836','#7c6f64','#b57614','#ebdbb2','#d5c4a1','#3c3836','#fbf1c7'],['#282828','#3c3836','#504945','#ebdbb2','#a89984','#fabd2f','#504945','#3c3836','#ebdbb2','#1d2021']],
+['monokai','Monokai','',['#f5f4ee','#fffffa','#d0cfc6','#272822','#75715e','#f92672','#e8e7de','#d9d8cd','#272822','#ffffff'],['#272822','#33342d','#49483e','#f8f8f2','#a6a28c','#a6e22e','#49483e','#3a3b33','#f8f8f2','#1e1f1a']]];
+function skinCSS(){const lum=h=>{const n=parseInt(h.slice(1),16);return((n>>16)*299+((n>>8)&255)*587+(n&255)*114)/1000};
+ return SK2.map(([id,nm,f,L,D])=>[['',L],['[data-theme=dark]',D]].map(([m,[bg,p,b,t,mu,a,c1,c2,tc,ed]])=>{const q='html[data-skin='+id+']'+m;
+  return q+'{--bg:'+bg+';--p:'+p+';--b:'+b+';--t:'+t+';--m:'+mu+';--a:'+a+';--tb:linear-gradient('+c1+','+c2+');--tbc:'+tc+';--tbbc:'+tc+';--tbb:#ffffff33;--tbx:#00000044;--hd:linear-gradient('+c2+','+c1+');--hdc:'+tc+';--bt:linear-gradient('+p+','+bg+');--ed:'+ed+';--ib:'+ed+'}'+q+' header b{color:'+tc+'}'+q+' .r.s{color:'+(lum(a)>150?'#000':'#fff')+'}'}).join('')+(f?'html[data-skin='+id+'] body{font-family:'+f+'}':'')).join('')}
+{const st=document.createElement('style');st.id='skins2';st.textContent=skinCSS();document.head.appendChild(st)}
+SK2.forEach(x=>SKINS[x[0]]='◐ '+x[1]);
+function setSkin(k){const r=document.documentElement;k?r.dataset.skin=k:delete r.dataset.skin;try{localStorage.setItem('kvect.skin',k)}catch{}}
+const LY={list:[],snap:0,lock:false,
+ async load(){try{const r=await Store.tx('readonly',s=>s.get('__layouts__'));if(r){this.list=r.list||[];this.snap=r.snap||0;this.lock=!!r.lock}}catch{}},
+ async persist(){try{await Store.tx('readwrite',s=>s.put({list:LY.list,snap:LY.snap,lock:LY.lock},'__layouts__'))}catch(e){log('Layout save failed: '+e,'er')}},
+ cur(){WM.sync();const M=WM.M(),W=M.clientWidth||1,H=M.clientHeight||1,o={};WM.ids.forEach(i=>{const s=WM.L[i],r=s.mx&&s.prev?s.prev:s;o[i]={x:r.x/W,y:r.y/H,w:r.w/W,h:r.h/H,s:s.s||''}});return o},
+ apply(o){const M=WM.M(),W=M.clientWidth,H=M.clientHeight;WM.ids.forEach(i=>{const f=o[i];if(f)WM.L[i]={x:Math.round(f.x*W),y:Math.round(f.y*H),w:Math.round(f.w*W),h:Math.round(f.h*H),s:f.s||''}});WM.clamp();WM.save()},
+ built:{
+  'Tile (default)':()=>WM.tile(),
+  'Code focus':()=>{const W=WM.M().clientWidth,H=WM.M().clientHeight,r=(x,y,w,h,s='')=>({x,y,w,h,s}),m=r(0,0,W,H,'min');return{'w-ex':r(0,0,200,H),'w-ed':r(206,0,W-206,H*.72),'w-lg':r(206,H*.72+6,W-206,H*.28-6),'w-pv':m,'w-st':m,'w-ac':m}},
+  'Editor + preview':()=>{const W=WM.M().clientWidth,H=WM.M().clientHeight,r=(x,y,w,h,s='')=>({x,y,w,h,s}),m=r(0,0,W,H,'min'),h=H*.78,c=(W-226)/2;return{'w-ex':r(0,0,220,h),'w-ed':r(226,0,c-3,h),'w-pv':r(226+c+3,0,c-3,h),'w-lg':r(0,h+6,W,H-h-6),'w-st':m,'w-ac':m}},
+  'Cascade':()=>{const M=WM.M(),o={};WM.ids.forEach((i,n)=>o[i]={x:n*28,y:n*28,w:M.clientWidth*.55,h:M.clientHeight*.6,s:''});return o}}};
+function layDlg(){
+ const body=()=>'<h4>Built-in layouts</h4><div class="g">'+Object.keys(LY.built).map(n=>`<button data-a="b:${esc(n)}">${esc(n)}</button>`).join('')+'</div>'
+  +'<h4>My layouts <button data-a="save">＋ Save current arrangement</button></h4>'+(LY.list.map((l,i)=>`<div>${esc(l.name)} <button data-a="a:${i}">Apply</button><button data-a="d:${i}">Delete</button></div>`).join('')||'<div class="em">None yet. Arrange the windows, then save.</div>')
+  +'<h4>Windows</h4><div class="g">'+WM.ids.map(i=>`<button data-a="v:${i}">${WM.L[i].s?'Show':'Hide'} ${esc(WM.el(i).dataset.title)}</button>`).join('')+'</div>'
+  +`<h4>Behaviour</h4><div class="g"><button data-a="snap">Grid snap: ${LY.snap?LY.snap+' px':'off'}</button><button data-a="lock">Layout lock: ${LY.lock?'on':'off'}</button></div>`;
+ dlg('<h3>Layouts</h3><p>Saved layouts store sizes as fractions of the workspace, so they fit other screen sizes.</p><div id="lyb">'+body()+'</div>',a=>{
+  const k=a.split(':')[0],v=a.slice(k.length+1);
+  if(k=='b'){WM.L=Object.assign({},WM.tile(),LY.built[v]());WM.applyAll();WM.save()}
+  else if(k=='save'){const n=prompt('Layout preset name:');if(!n)return;const i=LY.list.findIndex(l=>l.name==n);if(i>=0&&!confirm('Replace existing layout "'+n+'"?'))return;const e={name:n.slice(0,60),l:LY.cur()};i>=0?LY.list[i]=e:LY.list.push(e);LY.persist();log('Layout "'+n+'" saved','ok')}
+  else if(k=='a'){LY.apply(LY.list[v].l)}
+  else if(k=='d'){if(confirm('Delete layout "'+LY.list[v].name+'"?')){LY.list.splice(v,1);LY.persist()}}
+  else if(k=='v'){WM.state(WM.el(v),WM.L[v].s?'':'x')}
+  else if(k=='snap'){LY.snap=LY.snap==0?10:LY.snap==10?20:0;LY.persist();WM.snapAll();WM.save()}
+  else if(k=='lock'){LY.lock=!LY.lock;LY.persist()}
+  $('#lyb').innerHTML=body()})}
+
+/* ===== 15. INIT ===== */
+WM.init();PS.load().then(acDraw).catch(()=>{});LY.load();SES.load();(async()=>{try{const t=localStorage.getItem('kvect.theme');if(t)document.documentElement.dataset.theme=t;const sk=localStorage.getItem('kvect.skin');if(sk)document.documentElement.dataset.skin=sk;const l=localStorage.getItem('kvect.last');if(l&&await Store.load(l)){render();log('Restored "'+l+'"','ok');return}}catch{}
+ FS.load(TEMPLATES['Web (HTML/CSS/JS)']());render();openFile('index.html');log('Ready. Everything runs offline in this page.','ok')})();
+</script></body></html>
